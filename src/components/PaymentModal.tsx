@@ -54,11 +54,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
         }
 
         if (data?.error) {
-          throw new Error(data.error);
+          throw new Error(data.error as string);
         }
         
         if (data?.url) {
-          window.location.href = data.url;
+          window.location.href = data.url as string;
         } else {
           throw new Error('No payment URL received');
         }
@@ -79,11 +79,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
         }
 
         if (data?.error) {
-          throw new Error(data.error);
+          throw new Error(data.error as string);
         }
         
         if (data?.approvalUrl) {
-          window.location.href = data.approvalUrl;
+          window.location.href = data.approvalUrl as string;
         } else {
           throw new Error('No PayPal approval URL received');
         }
@@ -92,8 +92,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
         setError('Cryptocurrency payments are temporarily unavailable. Please use credit card or PayPal.');
         setProcessing(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'Payment failed. Please try again.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed. Please try again.';
+      setError(errorMessage);
       setProcessing(false);
     }
   };

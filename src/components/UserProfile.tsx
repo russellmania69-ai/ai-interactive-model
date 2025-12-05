@@ -13,13 +13,37 @@ interface UserProfileProps {
   onBack?: () => void;
 }
 
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  [key: string]: unknown;
+}
+
+interface Subscription {
+  id: string;
+  user_email: string;
+  model_id: string;
+  model_name: string;
+  status: string;
+  created_at: string;
+  [key: string]: unknown;
+}
+
+interface ChatSession {
+  id: string;
+  user_email: string;
+  model_id: string;
+  [key: string]: unknown;
+}
+
 export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
 
   const { user, updateProfile, signOut } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
-  const [chatSessions, setChatSessions] = useState<any[]>([]);
-  const [savedImages, setSavedImages] = useState<any[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [savedImages, setSavedImages] = useState<unknown[]>([]);
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -38,8 +62,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       .eq('id', user.id)
       .single();
     
-    setProfile(profileData);
-    setFullName(profileData?.full_name || '');
+    setProfile(profileData as UserProfile | null);
+    setFullName((profileData as UserProfile)?.full_name || '');
 
     const { data: subsData } = await supabase
       .from('subscriptions')
@@ -47,7 +71,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       .eq('user_email', user.email)
       .order('created_at', { ascending: false });
     
-    setSubscriptions(subsData || []);
+    setSubscriptions((subsData as Subscription[]) || []);
 
     const { data: sessionsData } = await supabase
       .from('chat_sessions')

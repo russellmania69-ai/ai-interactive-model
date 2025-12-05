@@ -21,19 +21,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    let isMounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Fetch session with timeout
+    const sessionPromise = Promise.race([
+      supabase.auth.getSession(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
+      )
+    ]);
 
-    return () => subscription.unsubscribe();
+    sessionPromise
+      .then(({ data: { session } }: any) => {
+        if (isMounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Auth session error:', error);
+        if (isMounted) {
+          // Allow app to render even if auth fails
+          setLoading(false);
+        }
+      });
+
+    // Subscribe to auth changes
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (isMounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      });
+
+      return () => {
+        isMounted = false;
+        subscription?.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Auth subscription error:', error);
+      return () => {
+        isMounted = false;
+      };
+    }
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
