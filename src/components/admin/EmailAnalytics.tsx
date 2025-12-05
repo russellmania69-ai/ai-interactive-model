@@ -23,10 +23,16 @@ interface EmailStats {
   byType: Record<string, number>;
 }
 
+interface ChartDataPoint {
+  date: string;
+  sent: number;
+  failed: number;
+}
+
 export default function EmailAnalytics() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [stats, setStats] = useState<EmailStats>({ total: 0, success: 0, failed: 0, byType: {} });
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,9 +49,9 @@ export default function EmailAnalytics() {
       .limit(100);
 
     if (emailLogs) {
-      setLogs(emailLogs);
-      calculateStats(emailLogs);
-      generateChartData(emailLogs);
+      setLogs(emailLogs as EmailLog[]);
+      calculateStats(emailLogs as EmailLog[]);
+      generateChartData(emailLogs as EmailLog[]);
     }
     
     setLoading(false);
