@@ -1,0 +1,18 @@
+name: CI Placeholder
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: No-op
+        run: |
+          echo "This is a placeholder CI workflow. Replace with your real jobs."
