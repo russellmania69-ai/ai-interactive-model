@@ -2,8 +2,20 @@ import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
 
 serve(async (req: Request) => {
   try {
+    // CORS handling: reply to preflight and include CORS headers on responses.
+    const originHeader = req.headers.get('origin') || '*';
+    const CORS_HEADERS: Record<string, string> = {
+      'Access-Control-Allow-Origin': originHeader,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+    };
+
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+
     if (req.method !== "POST") {
-      return new Response(JSON.stringify({ success: false, error: "Method not allowed - use POST" }), { status: 405, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ success: false, error: "Method not allowed - use POST" }), { status: 405, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
     }
 
     const contentType = req.headers.get("content-type") || "";
@@ -21,7 +33,7 @@ serve(async (req: Request) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPE_SECRET");
     if (!stripeKey) {
-      return new Response(JSON.stringify({ success: false, error: "Stripe secret not configured (STRIPE_SECRET_KEY)" }), { status: 500, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ success: false, error: "Stripe secret not configured (STRIPE_SECRET_KEY)" }), { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
     }
 
     // Build Stripe Checkout Session creation body
@@ -77,12 +89,14 @@ serve(async (req: Request) => {
 
     const data = await resp.json();
     if (!resp.ok) {
-      return new Response(JSON.stringify({ success: false, error: data?.error?.message || "Stripe API error", details: data }), { status: resp.status, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ success: false, error: data?.error?.message || "Stripe API error", details: data }), { status: resp.status, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ success: true, url: data.url, sessionId: data.id, raw: data }), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: true, url: data.url, sessionId: data.id, raw: data }), { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("create-stripe-checkout error:", err);
-    return new Response(JSON.stringify({ success: false, error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
+    const originHeader = (err && (err as any).origin) || '*';
+    const fallbackCors = { 'Access-Control-Allow-Origin': originHeader, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
+    return new Response(JSON.stringify({ success: false, error: String(err) }), { status: 500, headers: { ...fallbackCors, "Content-Type": "application/json" } });
   }
 });
