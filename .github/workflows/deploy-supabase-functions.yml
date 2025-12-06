@@ -19,7 +19,15 @@ jobs:
           node-version: '20'
 
       - name: Install supabase CLI
-        run: npm install -g supabase@latest
+        run: |
+          echo "Installing Supabase CLI via latest release (.deb)"
+          ASSET_URL=$(curl -s https://api.github.com/repos/supabase/cli/releases/latest | grep '"browser_download_url":' | grep linux | grep amd64 | grep '\.deb' | head -n1 | cut -d '"' -f4)
+          if [ -z "$ASSET_URL" ]; then
+            echo "Could not find a linux amd64 .deb asset for Supabase CLI"; exit 1;
+          fi
+          echo "Downloading $ASSET_URL"
+          curl -sL "$ASSET_URL" -o /tmp/supabase.deb
+          sudo dpkg -i /tmp/supabase.deb
 
       - name: Verify supabase CLI
         run: supabase --version
