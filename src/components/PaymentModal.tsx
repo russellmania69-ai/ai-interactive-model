@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AIModel } from '../types/model';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { CreditCard, Wallet } from 'lucide-react';
 
 interface PaymentModalProps {
@@ -11,6 +12,7 @@ interface PaymentModalProps {
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, model, onSuccess }) => {
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +39,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
     setProcessing(true);
     setError('');
     
+    // Require signed-in user so we can attach userId to the server request
+    if (!user) {
+      setError('Please sign in to start a subscription.');
+      setProcessing(false);
+      return;
+    }
     try {
       if (paymentMethod === 'card') {
         // Use Stripe for card payments
@@ -44,8 +52,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
           body: { 
             modelName: model.name,
             modelId: model.id,
-            amount: model.subscriptionPrice,
-            userEmail: email 
+            price: model.subscriptionPrice,
+            userId: user.id,
+            email: email
           },
         });
 
@@ -69,8 +78,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
           body: { 
             modelName: model.name,
             modelId: model.id,
-            amount: model.subscriptionPrice,
-            userEmail: email 
+            price: model.subscriptionPrice,
+            userId: user.id,
+            email: email
           },
         });
 

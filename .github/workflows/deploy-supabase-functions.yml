@@ -1,3 +1,65 @@
+name: Deploy Supabase Functions (create + verify)
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'supabase/functions/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install supabase CLI
+        run: npm install -g supabase@latest
+
+      - name: Verify supabase CLI
+        run: supabase --version
+
+      - name: Validate required secrets
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ] || [ -z "${{ secrets.STRIPE_SECRET_KEY }}" ]; then
+            echo "Missing required secrets: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF, STRIPE_SECRET_KEY";
+            exit 1;
+          fi
+
+      - name: Set STRIPE_SECRET_KEY in Supabase
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          supabase secrets set STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" --project-ref "$SUPABASE_PROJECT_REF"
+          # also set alternate name for compatibility
+          supabase secrets set STRIPE_SECRET="$STRIPE_SECRET_KEY" --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy create-stripe-checkout function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase functions deploy create-stripe-checkout --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy verify-stripe-session function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase functions deploy verify-stripe-session --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: List functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: supabase functions list --project-ref "$SUPABASE_PROJECT_REF"
 name: Deploy Supabase Edge Functions
 
 on:

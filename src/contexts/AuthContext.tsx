@@ -6,11 +6,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ data: unknown; error: unknown }>;
+  signIn: (email: string, password: string) => Promise<{ data: unknown; error: unknown }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<any>;
-  updateProfile: (data: any) => Promise<any>;
+  resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
+  updateProfile: (data: Record<string, unknown>) => Promise<{ data: unknown; error: unknown } | { error: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,13 +26,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Fetch session with timeout
     const sessionPromise = Promise.race([
       supabase.auth.getSession(),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
       )
     ]);
 
     sessionPromise
-      .then(({ data: { session } }: any) => {
+      .then((res) => {
+        const session = (res as { data: { session: Session | null } }).data.session;
         if (isMounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -77,20 +78,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: { full_name: fullName }
       }
     });
-    
-    if (!error && data.user) {
+
+    const user = (data as { user?: User } | null)?.user;
+
+    if (!error && user) {
       await supabase.from('user_profiles').insert({
-        id: data.user.id,
-        email: data.user.email,
+        id: user.id,
+        email: user.email,
         full_name: fullName
       });
     }
-    
+
     return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({ email, password });
+    return await supabase.auth.signInWithPassword({ email, password }) as { data: unknown; error: unknown };
   };
 
   const signOut = async () => {
@@ -98,12 +101,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
-    return await supabase.auth.resetPasswordForEmail(email);
+    return await supabase.auth.resetPasswordForEmail(email) as { data: unknown; error: unknown };
   };
 
-  const updateProfile = async (updates: any) => {
+  const updateProfile = async (updates: Record<string, unknown>) => {
     if (!user) return { error: 'No user' };
-    return await supabase.from('user_profiles').update(updates).eq('id', user.id);
+    return await supabase.from('user_profiles').update(updates).eq('id', user.id) as { data: unknown; error: unknown } | { error: string };
   };
 
   return (
