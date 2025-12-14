@@ -15,6 +15,21 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react()
   ].filter(Boolean),
+  build: {
+    // Improve chunking to avoid very large single bundles
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) return 'react-vendor';
+            if (id.includes('@supabase') || id.includes('supabase')) return 'supabase-vendor';
+            return 'vendor';
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 700
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

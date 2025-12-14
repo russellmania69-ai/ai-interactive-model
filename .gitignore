@@ -36,3 +36,8 @@ dist-ssr
 # Ignore backup files that may contain secrets
 *.bak
 src/**/*.bak
+
+# Ignore local/save files and temp workflow logs
+.env.production.save
+tmp_workflow_logs/
+run-*.zip
