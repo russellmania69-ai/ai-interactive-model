@@ -29,3 +29,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Vercel and env patterns
+.vercel
+.env*.local
+
+# Ignore backup files that may contain secrets
+*.bak
+src/**/*.bak

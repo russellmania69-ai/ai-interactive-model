@@ -1,0 +1,50 @@
+﻿2025-12-06T21:23:21.9529584Z ##[group]Run npm install -g supabase@latest
+2025-12-06T21:23:21.9529983Z [36;1mnpm install -g supabase@latest[0m
+2025-12-06T21:23:21.9569191Z shell: /usr/bin/bash -e {0}
+2025-12-06T21:23:21.9569476Z ##[endgroup]
+2025-12-06T21:23:22.8971568Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.8972360Z npm warn EBADENGINE   package: 'bin-links@6.0.0',
+2025-12-06T21:23:22.8972883Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.8973468Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.8973854Z npm warn EBADENGINE }
+2025-12-06T21:23:22.8974288Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.8974944Z npm warn EBADENGINE   package: 'cmd-shim@8.0.0',
+2025-12-06T21:23:22.8975694Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.8976251Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.8976988Z npm warn EBADENGINE }
+2025-12-06T21:23:22.8977453Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.8978277Z npm warn EBADENGINE   package: 'npm-normalize-package-bin@5.0.0',
+2025-12-06T21:23:22.8978838Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9047424Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9048256Z npm warn EBADENGINE }
+2025-12-06T21:23:22.9049002Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.9049772Z npm warn EBADENGINE   package: 'proc-log@6.1.0',
+2025-12-06T21:23:22.9050640Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9051678Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9052357Z npm warn EBADENGINE }
+2025-12-06T21:23:22.9052897Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.9053585Z npm warn EBADENGINE   package: 'read-cmd-shim@6.0.0',
+2025-12-06T21:23:22.9054402Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9055315Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9055972Z npm warn EBADENGINE }
+2025-12-06T21:23:22.9056723Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.9057561Z npm warn EBADENGINE   package: 'write-file-atomic@7.0.0',
+2025-12-06T21:23:22.9058448Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9059430Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9060142Z npm warn EBADENGINE }
+2025-12-06T21:23:23.1627913Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2025-12-06T21:23:23.4131205Z npm error code 1
+2025-12-06T21:23:23.4132039Z npm error path /opt/hostedtoolcache/node/18.20.8/x64/lib/node_modules/supabase
+2025-12-06T21:23:23.4134212Z npm error command failed
+2025-12-06T21:23:23.4134895Z npm error command sh -c node scripts/postinstall.js
+2025-12-06T21:23:23.4135646Z npm error node:internal/process/esm_loader:40
+2025-12-06T21:23:23.4136492Z npm error       internalBinding('errors').triggerUncaughtException(
+2025-12-06T21:23:23.4137987Z npm error                                 ^
+2025-12-06T21:23:23.4138821Z npm error Installing Supabase CLI as a global module is not supported.
+2025-12-06T21:23:23.4140475Z npm error Please use one of the supported package managers: https://github.com/supabase/cli#install-the-cli
+2025-12-06T21:23:23.4141338Z npm error
+2025-12-06T21:23:23.4142067Z npm error (Use `node --trace-uncaught ...` to show where the exception was thrown)
+2025-12-06T21:23:23.4142781Z npm error
+2025-12-06T21:23:23.4143173Z npm error Node.js v18.20.8
+2025-12-06T21:23:23.4146257Z npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2025-12-06T21_23_22_031Z-debug-0.log
+2025-12-06T21:23:23.4254686Z ##[error]Process completed with exit code 1.
