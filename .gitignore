@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,5 +28,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vercel and env patterns
 .vercel
 .env*.local
+
+# Ignore backup files that may contain secrets
+*.bak
+src/**/*.bak
+
+# Ignore local/save files and temp workflow logs
+.env.production.save
+tmp_workflow_logs/
+run-*.zip
