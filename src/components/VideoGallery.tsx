@@ -21,6 +21,7 @@ export function VideoGallery({ modelId, onPlayVideo }: VideoGalleryProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadVideos();
   }, [modelId]);

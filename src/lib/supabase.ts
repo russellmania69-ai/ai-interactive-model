@@ -9,7 +9,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 if (!supabaseUrl || !supabaseKey) {
 	// Warn in dev/local when env vars are missing — avoid throwing at import time.
 	// In production, ensure your deployment provider sets these variables.
-	// eslint-disable-next-line no-console
+	 
 	console.warn('Missing Supabase env vars: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
