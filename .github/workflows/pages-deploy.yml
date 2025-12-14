@@ -19,12 +19,16 @@ jobs:
         with:
           node-version: '18'
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --prefer-offline
       - name: Build
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Verify build output
+        run: |
+          echo "dist listing:" && ls -la ./dist || true
+          echo "index.html preview:" && sed -n '1,30p' ./dist/index.html || true
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v1
         with:
