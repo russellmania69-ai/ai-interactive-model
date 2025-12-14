@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
@@ -7,11 +6,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, fullName: string) => Promise<unknown>;
+  signIn: (email: string, password: string) => Promise<unknown>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<any>;
-  updateProfile: (data: any) => Promise<any>;
+  resetPassword: (email: string) => Promise<unknown>;
+  updateProfile: (data: Record<string, unknown>) => Promise<unknown>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,7 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ]);
 
     sessionPromise
-      .then(({ data: { session } }: any) => {
+      .then((res: { data: { session: Session | null } }) => {
+        const { session } = res.data;
         if (isMounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await supabase.auth.resetPasswordForEmail(email);
   };
 
-  const updateProfile = async (updates: any) => {
+  const updateProfile = async (updates: Record<string, unknown>) => {
     if (!user) return { error: 'No user' };
     return await supabase.from('user_profiles').update(updates).eq('id', user.id);
   };
