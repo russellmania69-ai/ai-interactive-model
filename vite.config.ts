@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     react()
   ].filter(Boolean),
   build: {
+    sourcemap: true,
     // Improve chunking to avoid very large single bundles
     rollupOptions: {
       output: {
