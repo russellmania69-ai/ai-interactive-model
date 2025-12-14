@@ -1,0 +1,50 @@
+name: Sentry Release and Source Maps
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [created]
+  workflow_dispatch: {}
+
+env:
+  NODE_ENV: production
+
+jobs:
+  sentry_release:
+    name: Create Sentry release and upload sourcemaps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Install sentry-cli
+        run: npm install -g @sentry/cli
+
+      - name: Create and upload Sentry release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          set -euo pipefail
+          RELEASE=${{ github.sha }}
+          echo "Creating Sentry release $RELEASE"
+          sentry-cli --org "$SENTRY_ORG" releases new -p "$SENTRY_PROJECT" "$RELEASE"
+          echo "Uploading sourcemaps from ./dist"
+          sentry-cli --org "$SENTRY_ORG" releases files "$RELEASE" upload-sourcemaps ./dist --rewrite --validate --url-prefix "~/assets"
+          sentry-cli --org "$SENTRY_ORG" releases finalize "$RELEASE"
+          sentry-cli --org "$SENTRY_ORG" releases deploys "$RELEASE" new -e production
