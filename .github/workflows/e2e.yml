@@ -1,0 +1,28 @@
+name: End-to-end tests
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types:
+      - completed
+
+jobs:
+  e2e:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm install --no-audit --prefer-offline
+      - name: Install Playwright deps
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: npx playwright test --config=playwright.config.ts
+        env:
+          E2E_BASE_URL: https://russellmania69-ai.github.io/ai-interactive-model/

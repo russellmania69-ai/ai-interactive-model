@@ -4,8 +4,10 @@ import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './contexts/AuthContext'
 import App from './App.tsx'
 import './index.css'
+import { initSentry } from './lib/sentry'
 
 try {
+  initSentry()
   createRoot(document.getElementById("root")!).render(
     <HelmetProvider>
       <AuthProvider>
