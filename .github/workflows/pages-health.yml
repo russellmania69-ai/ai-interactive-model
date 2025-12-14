@@ -9,11 +9,17 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Curl homepage
+      - name: Check health JSON
         run: |
           set -e
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://russellmania69-ai.github.io/ai-interactive-model/)
-          echo "status=$STATUS"
-          if [ "$STATUS" -ne 200 ]; then
-            echo "site returned $STATUS" && exit 1
+          URL="https://russellmania69-ai.github.io/ai-interactive-model/health.json"
+          echo "Checking $URL"
+          BODY=$(curl -sS "$URL" || true)
+          if [ -z "$BODY" ]; then
+            echo "no response from $URL" && exit 1
+          fi
+          echo "$BODY" | grep -q '"status":' || (echo "invalid body: $BODY" && exit 1)
+          OK=$(echo "$BODY" | grep -o '"status"[[:space:]]*:[[:space:]]*"ok"' || true)
+          if [ -z "$OK" ]; then
+            echo "health status not ok: $BODY" && exit 1
           fi

@@ -34,6 +34,18 @@ Deployment notes:
 - For Netlify: set `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` in GitHub Secrets.
 - For GitHub Pages: set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in GitHub Secrets.
 
+Sentry (optional)
+
+- To enable runtime error reporting add the following repository secrets in GitHub:
+	- `VITE_SENTRY_DSN` — your client Sentry DSN (will enable Sentry at runtime)
+	- `SENTRY_AUTH_TOKEN` — (optional) used by CI for release creation if you add release steps
+
+Steps to add a secret in GitHub:
+1. Go to your repository on GitHub → Settings → Secrets and variables → Actions.
+2. Click "New repository secret" and add the secret name and value.
+3. The app will initialize Sentry automatically at startup when `VITE_SENTRY_DSN` is present.
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
