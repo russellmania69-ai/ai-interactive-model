@@ -31,10 +31,19 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check for Sentry secrets
+        id: check_sentry
+        run: |
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN != '' }}" >> $GITHUB_OUTPUT
+          echo "SENTRY_ORG=${{ secrets.SENTRY_ORG != '' }}" >> $GITHUB_OUTPUT
+          echo "SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT != '' }}" >> $GITHUB_OUTPUT
+
       - name: Install sentry-cli
+        if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN == 'true' && steps.check_sentry.outputs.SENTRY_ORG == 'true' && steps.check_sentry.outputs.SENTRY_PROJECT == 'true'
         run: npm install -g @sentry/cli
 
       - name: Create and upload Sentry release
+        if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN == 'true' && steps.check_sentry.outputs.SENTRY_ORG == 'true' && steps.check_sentry.outputs.SENTRY_PROJECT == 'true'
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
@@ -48,3 +57,9 @@ jobs:
           sentry-cli --org "$SENTRY_ORG" releases files "$RELEASE" upload-sourcemaps ./dist --rewrite --validate --url-prefix "~/assets"
           sentry-cli --org "$SENTRY_ORG" releases finalize "$RELEASE"
           sentry-cli --org "$SENTRY_ORG" releases deploys "$RELEASE" new -e production
+
+      - name: Skip Sentry steps (missing secrets)
+        if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN != 'true' || steps.check_sentry.outputs.SENTRY_ORG != 'true' || steps.check_sentry.outputs.SENTRY_PROJECT != 'true'
+        run: |
+          echo "Sentry secrets missing. Skipping release creation and sourcemap upload."
+          echo "Add SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT to GitHub Secrets to enable this step."
