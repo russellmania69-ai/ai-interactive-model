@@ -40,16 +40,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
     try {
       if (paymentMethod === 'card') {
         // Use Stripe for card payments
+        const { data: { session } } = await supabase.auth.getSession();
+        const supabaseUrl = supabase.supabaseUrl;
+        const supabaseKey = session?.access_token || '';
+
         const { data, error: fnError } = await supabase.functions.invoke('create-stripe-checkout', {
           body: { 
             modelName: model.name,
             modelId: model.id,
             amount: model.subscriptionPrice,
-            userEmail: email 
+            userEmail: email,
+            supabaseUrl,
+            supabaseKey,
           },
         });
-
         if (fnError) {
+          console.error('Edge function error (create-stripe-checkout):', fnError);
           throw new Error(fnError.message || 'Failed to connect to payment service');
         }
 
@@ -65,16 +71,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, mod
 
       } else if (paymentMethod === 'paypal') {
         // Use PayPal for PayPal payments
+        const { data: { session } } = await supabase.auth.getSession();
+        const supabaseUrl = supabase.supabaseUrl;
+        const supabaseKey = session?.access_token || '';
+
         const { data, error: fnError } = await supabase.functions.invoke('create-paypal-order', {
           body: { 
             modelName: model.name,
             modelId: model.id,
             amount: model.subscriptionPrice,
-            userEmail: email 
+            userEmail: email,
+            supabaseUrl,
+            supabaseKey,
           },
         });
 
         if (fnError) {
+          console.error('Edge function error (create-paypal-order):', fnError);
           throw new Error(fnError.message || 'Failed to connect to PayPal');
         }
 
