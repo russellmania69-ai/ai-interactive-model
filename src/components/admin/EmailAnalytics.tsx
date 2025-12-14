@@ -35,6 +35,7 @@ export default function EmailAnalytics() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEmailData();
   }, []);

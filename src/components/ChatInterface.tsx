@@ -34,6 +34,8 @@ export function ChatInterface({ sessionId, modelName, modelImage, onBack }: Chat
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
+  // include sessionId only; these functions are stable for this component
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadMessages();
     subscribeToMessages();

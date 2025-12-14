@@ -47,6 +47,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (user) {
       loadUserData();

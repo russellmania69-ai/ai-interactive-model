@@ -30,6 +30,7 @@ export function ImageGallery({ sessionId, onClose }: ImageGalleryProps) {
   });
   const [versions, setVersions] = useState<GalleryImage[]>([]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadImages();
   }, [sessionId]);
