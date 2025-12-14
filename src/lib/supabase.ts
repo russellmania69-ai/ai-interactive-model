@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client using environment variables
-// Vite exposes env vars as `import.meta.env.VITE_...`
+// Initialize Supabase client using environment variables (Vite: import.meta.env)
+// Vite exposes env vars as `import.meta.env.VITE_...`.
+// Prefer `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for client usage.
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
