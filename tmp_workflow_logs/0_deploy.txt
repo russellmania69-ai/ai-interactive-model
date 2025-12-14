@@ -1,0 +1,184 @@
+﻿2025-12-06T21:23:15.5384293Z Current runner version: '2.329.0'
+2025-12-06T21:23:15.5407557Z ##[group]Runner Image Provisioner
+2025-12-06T21:23:15.5408461Z Hosted Compute Agent
+2025-12-06T21:23:15.5409123Z Version: 20251124.448
+2025-12-06T21:23:15.5409728Z Commit: fda5086b43ec66ade217e5fcd18146c879571177
+2025-12-06T21:23:15.5410430Z Build Date: 2025-11-24T21:16:26Z
+2025-12-06T21:23:15.5411077Z ##[endgroup]
+2025-12-06T21:23:15.5411611Z ##[group]Operating System
+2025-12-06T21:23:15.5412168Z Ubuntu
+2025-12-06T21:23:15.5412673Z 24.04.3
+2025-12-06T21:23:15.5413129Z LTS
+2025-12-06T21:23:15.5413559Z ##[endgroup]
+2025-12-06T21:23:15.5414137Z ##[group]Runner Image
+2025-12-06T21:23:15.5414715Z Image: ubuntu-24.04
+2025-12-06T21:23:15.5415232Z Version: 20251126.144.1
+2025-12-06T21:23:15.5416305Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251126.144/images/ubuntu/Ubuntu2404-Readme.md
+2025-12-06T21:23:15.5418252Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251126.144
+2025-12-06T21:23:15.5419377Z ##[endgroup]
+2025-12-06T21:23:15.5420429Z ##[group]GITHUB_TOKEN Permissions
+2025-12-06T21:23:15.5422322Z Contents: read
+2025-12-06T21:23:15.5422880Z Metadata: read
+2025-12-06T21:23:15.5423417Z Packages: read
+2025-12-06T21:23:15.5424088Z ##[endgroup]
+2025-12-06T21:23:15.5426067Z Secret source: Actions
+2025-12-06T21:23:15.5427040Z Prepare workflow directory
+2025-12-06T21:23:15.5747920Z Prepare all required actions
+2025-12-06T21:23:15.5787553Z Getting action download info
+2025-12-06T21:23:16.0190867Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2025-12-06T21:23:16.5890023Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-12-06T21:23:16.7611903Z Complete job name: deploy
+2025-12-06T21:23:16.8345344Z ##[group]Run actions/checkout@v4
+2025-12-06T21:23:16.8346243Z with:
+2025-12-06T21:23:16.8346937Z   repository: russellmania69-ai/ai-interactive-model
+2025-12-06T21:23:16.8347775Z   token: ***
+2025-12-06T21:23:16.8348241Z   ssh-strict: true
+2025-12-06T21:23:16.8348683Z   ssh-user: git
+2025-12-06T21:23:16.8349123Z   persist-credentials: true
+2025-12-06T21:23:16.8349609Z   clean: true
+2025-12-06T21:23:16.8350056Z   sparse-checkout-cone-mode: true
+2025-12-06T21:23:16.8350595Z   fetch-depth: 1
+2025-12-06T21:23:16.8351019Z   fetch-tags: false
+2025-12-06T21:23:16.8351471Z   show-progress: true
+2025-12-06T21:23:16.8351928Z   lfs: false
+2025-12-06T21:23:16.8352347Z   submodules: false
+2025-12-06T21:23:16.8352809Z   set-safe-directory: true
+2025-12-06T21:23:16.8353542Z ##[endgroup]
+2025-12-06T21:23:16.9435302Z Syncing repository: russellmania69-ai/ai-interactive-model
+2025-12-06T21:23:16.9437549Z ##[group]Getting Git version info
+2025-12-06T21:23:16.9438564Z Working directory is '/home/runner/work/ai-interactive-model/ai-interactive-model'
+2025-12-06T21:23:16.9439761Z [command]/usr/bin/git version
+2025-12-06T21:23:16.9505119Z git version 2.52.0
+2025-12-06T21:23:16.9532150Z ##[endgroup]
+2025-12-06T21:23:16.9546967Z Temporarily overriding HOME='/home/runner/work/_temp/f9121fd3-a7f9-4c1a-894c-05f56d78973a' before making global git config changes
+2025-12-06T21:23:16.9549741Z Adding repository directory to the temporary git global config as a safe directory
+2025-12-06T21:23:16.9560958Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ai-interactive-model/ai-interactive-model
+2025-12-06T21:23:16.9598036Z Deleting the contents of '/home/runner/work/ai-interactive-model/ai-interactive-model'
+2025-12-06T21:23:16.9601554Z ##[group]Initializing the repository
+2025-12-06T21:23:16.9606916Z [command]/usr/bin/git init /home/runner/work/ai-interactive-model/ai-interactive-model
+2025-12-06T21:23:16.9694818Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-12-06T21:23:16.9696367Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2025-12-06T21:23:16.9698039Z hint: to use in all of your new repositories, which will suppress this warning,
+2025-12-06T21:23:16.9699349Z hint: call:
+2025-12-06T21:23:16.9700136Z hint:
+2025-12-06T21:23:16.9701190Z hint: 	git config --global init.defaultBranch <name>
+2025-12-06T21:23:16.9702428Z hint:
+2025-12-06T21:23:16.9703581Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-12-06T21:23:16.9705529Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-12-06T21:23:16.9707263Z hint:
+2025-12-06T21:23:16.9708038Z hint: 	git branch -m <name>
+2025-12-06T21:23:16.9708945Z hint:
+2025-12-06T21:23:16.9710220Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-12-06T21:23:16.9712638Z Initialized empty Git repository in /home/runner/work/ai-interactive-model/ai-interactive-model/.git/
+2025-12-06T21:23:16.9716165Z [command]/usr/bin/git remote add origin https://github.com/russellmania69-ai/ai-interactive-model
+2025-12-06T21:23:16.9747411Z ##[endgroup]
+2025-12-06T21:23:16.9748835Z ##[group]Disabling automatic garbage collection
+2025-12-06T21:23:16.9752166Z [command]/usr/bin/git config --local gc.auto 0
+2025-12-06T21:23:16.9781409Z ##[endgroup]
+2025-12-06T21:23:16.9782881Z ##[group]Setting up auth
+2025-12-06T21:23:16.9789367Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-12-06T21:23:16.9820431Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-12-06T21:23:17.0136059Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-12-06T21:23:17.0172287Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-12-06T21:23:17.0403923Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-12-06T21:23:17.0435791Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-12-06T21:23:17.0669205Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-12-06T21:23:17.0703560Z ##[endgroup]
+2025-12-06T21:23:17.0711823Z ##[group]Fetching the repository
+2025-12-06T21:23:17.0713378Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +3fae54675036e6f7ca61e3ddbd1b0557ff847b62:refs/remotes/origin/STRIPE_SECRET_KEY
+2025-12-06T21:23:17.5350433Z From https://github.com/russellmania69-ai/ai-interactive-model
+2025-12-06T21:23:17.5352272Z  * [new ref]         3fae54675036e6f7ca61e3ddbd1b0557ff847b62 -> origin/STRIPE_SECRET_KEY
+2025-12-06T21:23:17.5381728Z ##[endgroup]
+2025-12-06T21:23:17.5383254Z ##[group]Determining the checkout info
+2025-12-06T21:23:17.5384794Z ##[endgroup]
+2025-12-06T21:23:17.5388885Z [command]/usr/bin/git sparse-checkout disable
+2025-12-06T21:23:17.5430434Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-12-06T21:23:17.5457705Z ##[group]Checking out the ref
+2025-12-06T21:23:17.5461468Z [command]/usr/bin/git checkout --progress --force -B STRIPE_SECRET_KEY refs/remotes/origin/STRIPE_SECRET_KEY
+2025-12-06T21:23:17.5623342Z Switched to a new branch 'STRIPE_SECRET_KEY'
+2025-12-06T21:23:17.5625627Z branch 'STRIPE_SECRET_KEY' set up to track 'origin/STRIPE_SECRET_KEY'.
+2025-12-06T21:23:17.5635958Z ##[endgroup]
+2025-12-06T21:23:17.5671979Z [command]/usr/bin/git log -1 --format=%H
+2025-12-06T21:23:17.5694310Z 3fae54675036e6f7ca61e3ddbd1b0557ff847b62
+2025-12-06T21:23:17.6003173Z ##[group]Run actions/setup-node@v4
+2025-12-06T21:23:17.6004415Z with:
+2025-12-06T21:23:17.6005288Z   node-version: 18
+2025-12-06T21:23:17.6006249Z   always-auth: false
+2025-12-06T21:23:17.6007405Z   check-latest: false
+2025-12-06T21:23:17.6008696Z   token: ***
+2025-12-06T21:23:17.6009583Z ##[endgroup]
+2025-12-06T21:23:17.7780420Z Attempting to download 18...
+2025-12-06T21:23:18.5233434Z Acquiring 18.20.8 - x64 from https://github.com/actions/node-versions/releases/download/18.20.8-14110393767/node-18.20.8-linux-x64.tar.gz
+2025-12-06T21:23:19.0379921Z Extracting ...
+2025-12-06T21:23:19.0480686Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/f0d3c83e-3f9d-4ba8-9344-e3aefd870623 -f /home/runner/work/_temp/7659c49c-df75-44a2-9770-a1b5e25014d3
+2025-12-06T21:23:19.9919869Z Adding to the cache ...
+2025-12-06T21:23:21.6829143Z ##[group]Environment details
+2025-12-06T21:23:21.9362107Z node: v18.20.8
+2025-12-06T21:23:21.9362631Z npm: 10.8.2
+2025-12-06T21:23:21.9362979Z yarn: 1.22.22
+2025-12-06T21:23:21.9363693Z ##[endgroup]
+2025-12-06T21:23:21.9529602Z ##[group]Run npm install -g supabase@latest
+2025-12-06T21:23:21.9529988Z [36;1mnpm install -g supabase@latest[0m
+2025-12-06T21:23:21.9569206Z shell: /usr/bin/bash -e {0}
+2025-12-06T21:23:21.9569480Z ##[endgroup]
+2025-12-06T21:23:22.8971617Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.8972366Z npm warn EBADENGINE   package: 'bin-links@6.0.0',
+2025-12-06T21:23:22.8972894Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.8973473Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.8973859Z npm warn EBADENGINE }
+2025-12-06T21:23:22.8974296Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.8974951Z npm warn EBADENGINE   package: 'cmd-shim@8.0.0',
+2025-12-06T21:23:22.8975699Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.8976255Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.8976995Z npm warn EBADENGINE }
+2025-12-06T21:23:22.8977530Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.8978284Z npm warn EBADENGINE   package: 'npm-normalize-package-bin@5.0.0',
+2025-12-06T21:23:22.8978842Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9047445Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9048269Z npm warn EBADENGINE }
+2025-12-06T21:23:22.9049013Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.9049783Z npm warn EBADENGINE   package: 'proc-log@6.1.0',
+2025-12-06T21:23:22.9050651Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9051693Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9052366Z npm warn EBADENGINE }
+2025-12-06T21:23:22.9052904Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.9053604Z npm warn EBADENGINE   package: 'read-cmd-shim@6.0.0',
+2025-12-06T21:23:22.9054427Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9055326Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9055982Z npm warn EBADENGINE }
+2025-12-06T21:23:22.9056734Z npm warn EBADENGINE Unsupported engine {
+2025-12-06T21:23:22.9057571Z npm warn EBADENGINE   package: 'write-file-atomic@7.0.0',
+2025-12-06T21:23:22.9058461Z npm warn EBADENGINE   required: { node: '^20.17.0 || >=22.9.0' },
+2025-12-06T21:23:22.9059443Z npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-12-06T21:23:22.9060154Z npm warn EBADENGINE }
+2025-12-06T21:23:23.1627936Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2025-12-06T21:23:23.4131242Z npm error code 1
+2025-12-06T21:23:23.4132048Z npm error path /opt/hostedtoolcache/node/18.20.8/x64/lib/node_modules/supabase
+2025-12-06T21:23:23.4134227Z npm error command failed
+2025-12-06T21:23:23.4134904Z npm error command sh -c node scripts/postinstall.js
+2025-12-06T21:23:23.4135687Z npm error node:internal/process/esm_loader:40
+2025-12-06T21:23:23.4137011Z npm error       internalBinding('errors').triggerUncaughtException(
+2025-12-06T21:23:23.4138000Z npm error                                 ^
+2025-12-06T21:23:23.4138831Z npm error Installing Supabase CLI as a global module is not supported.
+2025-12-06T21:23:23.4140488Z npm error Please use one of the supported package managers: https://github.com/supabase/cli#install-the-cli
+2025-12-06T21:23:23.4141345Z npm error
+2025-12-06T21:23:23.4142076Z npm error (Use `node --trace-uncaught ...` to show where the exception was thrown)
+2025-12-06T21:23:23.4142790Z npm error
+2025-12-06T21:23:23.4143179Z npm error Node.js v18.20.8
+2025-12-06T21:23:23.4146273Z npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2025-12-06T21_23_22_031Z-debug-0.log
+2025-12-06T21:23:23.4254699Z ##[error]Process completed with exit code 1.
+2025-12-06T21:23:23.4383227Z Post job cleanup.
+2025-12-06T21:23:23.5311855Z [command]/usr/bin/git version
+2025-12-06T21:23:23.5347342Z git version 2.52.0
+2025-12-06T21:23:23.5389295Z Temporarily overriding HOME='/home/runner/work/_temp/ce0ac184-0894-4504-b4e9-acba4795f6a4' before making global git config changes
+2025-12-06T21:23:23.5390258Z Adding repository directory to the temporary git global config as a safe directory
+2025-12-06T21:23:23.5394778Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ai-interactive-model/ai-interactive-model
+2025-12-06T21:23:23.5428838Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-12-06T21:23:23.5460879Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-12-06T21:23:23.5683781Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-12-06T21:23:23.5704447Z http.https://github.com/.extraheader
+2025-12-06T21:23:23.5716706Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-12-06T21:23:23.5746089Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-12-06T21:23:23.5966251Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-12-06T21:23:23.5997992Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-12-06T21:23:23.6329275Z Cleaning up orphan processes

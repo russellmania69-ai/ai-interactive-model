@@ -1,0 +1,10 @@
+﻿2025-12-06T21:00:29.0331863Z ##[group]Run curl -L "https://github.com/supabase/cli/releases/latest/download/supabase_$(uname -s)_$(uname -m).tar.gz" -sSfL | tar xz -C /usr/local/bin supabase
+2025-12-06T21:00:29.0337392Z [36;1mcurl -L "https://github.com/supabase/cli/releases/latest/download/supabase_$(uname -s)_$(uname -m).tar.gz" -sSfL | tar xz -C /usr/local/bin supabase[0m
+2025-12-06T21:00:29.0376978Z shell: /usr/bin/bash -e {0}
+2025-12-06T21:00:29.0378179Z ##[endgroup]
+2025-12-06T21:00:29.2713605Z curl: (22) The requested URL returned error: 404
+2025-12-06T21:00:29.2736614Z 
+2025-12-06T21:00:29.2737644Z gzip: stdin: unexpected end of file
+2025-12-06T21:00:29.2740536Z tar: Child returned status 1
+2025-12-06T21:00:29.2742039Z tar: Error is not recoverable: exiting now
+2025-12-06T21:00:29.2759752Z ##[error]Process completed with exit code 2.

@@ -1,0 +1,72 @@
+﻿2025-12-06T21:00:28.4179672Z ##[group]Run actions/checkout@v4
+2025-12-06T21:00:28.4181026Z with:
+2025-12-06T21:00:28.4181924Z   repository: russellmania69-ai/ai-interactive-model
+2025-12-06T21:00:28.4183237Z   token: ***
+2025-12-06T21:00:28.4183970Z   ssh-strict: true
+2025-12-06T21:00:28.4184721Z   ssh-user: git
+2025-12-06T21:00:28.4185742Z   persist-credentials: true
+2025-12-06T21:00:28.4186608Z   clean: true
+2025-12-06T21:00:28.4187326Z   sparse-checkout-cone-mode: true
+2025-12-06T21:00:28.4188215Z   fetch-depth: 1
+2025-12-06T21:00:28.4188983Z   fetch-tags: false
+2025-12-06T21:00:28.4189758Z   show-progress: true
+2025-12-06T21:00:28.4190539Z   lfs: false
+2025-12-06T21:00:28.4191240Z   submodules: false
+2025-12-06T21:00:28.4192067Z   set-safe-directory: true
+2025-12-06T21:00:28.4193293Z ##[endgroup]
+2025-12-06T21:00:28.5273670Z Syncing repository: russellmania69-ai/ai-interactive-model
+2025-12-06T21:00:28.5275942Z ##[group]Getting Git version info
+2025-12-06T21:00:28.5276822Z Working directory is '/home/runner/work/ai-interactive-model/ai-interactive-model'
+2025-12-06T21:00:28.5278326Z [command]/usr/bin/git version
+2025-12-06T21:00:28.5351818Z git version 2.52.0
+2025-12-06T21:00:28.5378501Z ##[endgroup]
+2025-12-06T21:00:28.5391413Z Temporarily overriding HOME='/home/runner/work/_temp/f3aee2fa-8a2f-47b0-888b-288aaa595610' before making global git config changes
+2025-12-06T21:00:28.5392831Z Adding repository directory to the temporary git global config as a safe directory
+2025-12-06T21:00:28.5403154Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ai-interactive-model/ai-interactive-model
+2025-12-06T21:00:28.5440312Z Deleting the contents of '/home/runner/work/ai-interactive-model/ai-interactive-model'
+2025-12-06T21:00:28.5443625Z ##[group]Initializing the repository
+2025-12-06T21:00:28.5447854Z [command]/usr/bin/git init /home/runner/work/ai-interactive-model/ai-interactive-model
+2025-12-06T21:00:28.5548241Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-12-06T21:00:28.5549271Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2025-12-06T21:00:28.5550355Z hint: to use in all of your new repositories, which will suppress this warning,
+2025-12-06T21:00:28.5551094Z hint: call:
+2025-12-06T21:00:28.5551483Z hint:
+2025-12-06T21:00:28.5552089Z hint: 	git config --global init.defaultBranch <name>
+2025-12-06T21:00:28.5553467Z hint:
+2025-12-06T21:00:28.5554174Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-12-06T21:00:28.5556083Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-12-06T21:00:28.5557423Z hint:
+2025-12-06T21:00:28.5558175Z hint: 	git branch -m <name>
+2025-12-06T21:00:28.5559026Z hint:
+2025-12-06T21:00:28.5560161Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-12-06T21:00:28.5562335Z Initialized empty Git repository in /home/runner/work/ai-interactive-model/ai-interactive-model/.git/
+2025-12-06T21:00:28.5567401Z [command]/usr/bin/git remote add origin https://github.com/russellmania69-ai/ai-interactive-model
+2025-12-06T21:00:28.5607327Z ##[endgroup]
+2025-12-06T21:00:28.5608604Z ##[group]Disabling automatic garbage collection
+2025-12-06T21:00:28.5611225Z [command]/usr/bin/git config --local gc.auto 0
+2025-12-06T21:00:28.5639113Z ##[endgroup]
+2025-12-06T21:00:28.5639835Z ##[group]Setting up auth
+2025-12-06T21:00:28.5646206Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-12-06T21:00:28.5674941Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-12-06T21:00:28.6007015Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-12-06T21:00:28.6035593Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-12-06T21:00:28.6271296Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-12-06T21:00:28.6300413Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-12-06T21:00:28.6546869Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-12-06T21:00:28.6586949Z ##[endgroup]
+2025-12-06T21:00:28.6588115Z ##[group]Fetching the repository
+2025-12-06T21:00:28.6599382Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +782e2f051a5a0223403fa0bf861005b856bf4870:refs/remotes/origin/main
+2025-12-06T21:00:28.9822208Z From https://github.com/russellmania69-ai/ai-interactive-model
+2025-12-06T21:00:28.9824114Z  * [new ref]         782e2f051a5a0223403fa0bf861005b856bf4870 -> origin/main
+2025-12-06T21:00:28.9856086Z ##[endgroup]
+2025-12-06T21:00:28.9857461Z ##[group]Determining the checkout info
+2025-12-06T21:00:28.9859025Z ##[endgroup]
+2025-12-06T21:00:28.9863873Z [command]/usr/bin/git sparse-checkout disable
+2025-12-06T21:00:28.9905647Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-12-06T21:00:28.9932784Z ##[group]Checking out the ref
+2025-12-06T21:00:28.9936759Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-12-06T21:00:29.0049812Z Switched to a new branch 'main'
+2025-12-06T21:00:29.0053076Z branch 'main' set up to track 'origin/main'.
+2025-12-06T21:00:29.0059681Z ##[endgroup]
+2025-12-06T21:00:29.0097162Z [command]/usr/bin/git log -1 --format=%H
+2025-12-06T21:00:29.0119524Z 782e2f051a5a0223403fa0bf861005b856bf4870
