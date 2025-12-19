@@ -81,3 +81,6 @@ jobs:
           repository: ${{ github.repository }}
           workflow: sentry-release.yml
           ref: main
+          inputs: |
+            release: ${{ github.sha }}
+            dist_path: ./dist
