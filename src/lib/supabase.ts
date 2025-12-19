@@ -13,6 +13,35 @@ if (!supabaseUrl || !supabaseKey) {
 	console.warn('Missing Supabase env vars: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
-const supabase = createClient(supabaseUrl ?? '', supabaseKey ?? '');
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+if (supabaseUrl && supabaseKey) {
+	supabaseClient = createClient(supabaseUrl, supabaseKey);
+}
 
-export { supabase };
+// If Supabase isn't configured, provide a lightweight shim with the
+// minimal methods our app calls so importing code doesn't crash at runtime.
+const noopError = (msg = 'Supabase not configured') => ({ data: null, error: new Error(msg) });
+
+const supabaseShim = {
+	// expose the url so callers can still read it (may be undefined)
+	supabaseUrl: supabaseUrl ?? '',
+	auth: {
+		getSession: async () => ({ data: { session: null } }),
+		onAuthStateChange: (_cb: any) => ({ data: { subscription: null } }),
+		signUp: async () => noopError(),
+		signInWithPassword: async () => noopError(),
+		signOut: async () => ({ error: null }),
+		resetPasswordForEmail: async () => noopError(),
+	},
+	functions: {
+		invoke: async () => noopError(),
+	},
+	from: () => ({
+		insert: async () => noopError(),
+		update: () => ({ eq: async () => noopError() }),
+	}),
+} as const;
+
+export const supabase = supabaseClient ?? (supabaseShim as unknown as ReturnType<typeof createClient>);
+
+export default supabase;
