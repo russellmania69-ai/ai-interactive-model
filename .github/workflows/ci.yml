@@ -23,6 +23,12 @@ jobs:
         run: npm run test -- --coverage
       - name: Build
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
   e2e-smoke:
     needs: build
@@ -37,6 +43,12 @@ jobs:
         run: npm ci
       - name: Build (ensure dist)
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
       - name: Install Playwright deps
         run: npx playwright install --with-deps
       - name: Serve build and wait
@@ -55,3 +67,17 @@ jobs:
         if: always()
         run: |
           kill $(cat server.pid) || true
+
+  dispatch-sentry-release:
+    name: Dispatch Sentry release workflow
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SENTRY_AUTH_TOKEN && secrets.SENTRY_ORG && secrets.SENTRY_PROJECT }}
+    steps:
+      - name: Dispatch sentry-release workflow
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          workflow: sentry-release.yml
+          ref: main

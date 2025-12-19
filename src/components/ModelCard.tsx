@@ -12,7 +12,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onViewDetails, onSu
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
       <div className="relative">
-        <img src={model.image} alt={model.name} className="w-full h-80 object-cover" />
+        <img src={model.image} alt={model.name} className="w-full h-56 sm:h-80 object-cover" />
         {model.isOnline && (
           <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
@@ -45,7 +45,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onViewDetails, onSu
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="text-2xl font-bold text-purple-600">${model.subscriptionPrice}/mo</div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0 flex-wrap">
             <button
               onClick={() => onViewDetails(model)}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm sm:text-base"
