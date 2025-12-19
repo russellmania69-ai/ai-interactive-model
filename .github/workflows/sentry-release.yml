@@ -5,7 +5,16 @@ on:
     branches: [ main ]
   release:
     types: [created]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Optional release SHA or tag to use (overrides github.sha)'
+        required: false
+        default: ''
+      dist_path:
+        description: 'Path to built distribution to upload (defaults to ./dist)'
+        required: false
+        default: './dist'
 
 env:
   NODE_ENV: production
@@ -50,11 +59,13 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
           set -euo pipefail
-          RELEASE=${{ github.sha }}
-          echo "Creating Sentry release $RELEASE"
+          # Allow callers to provide a release via workflow_dispatch input; otherwise fall back to github.sha
+          RELEASE=${{ github.event.inputs.release || github.sha }}
+          DIST_PATH=${{ github.event.inputs.dist_path || './dist' }}
+          echo "Using release: $RELEASE"
+          echo "Uploading sourcemaps from $DIST_PATH"
           sentry-cli --org "$SENTRY_ORG" releases new -p "$SENTRY_PROJECT" "$RELEASE"
-          echo "Uploading sourcemaps from ./dist"
-          sentry-cli --org "$SENTRY_ORG" releases files "$RELEASE" upload-sourcemaps ./dist --rewrite --validate --url-prefix "~/assets"
+          sentry-cli --org "$SENTRY_ORG" releases files "$RELEASE" upload-sourcemaps "$DIST_PATH" --rewrite --validate --url-prefix "~/assets"
           sentry-cli --org "$SENTRY_ORG" releases finalize "$RELEASE"
           sentry-cli --org "$SENTRY_ORG" releases deploys "$RELEASE" new -e production
 
