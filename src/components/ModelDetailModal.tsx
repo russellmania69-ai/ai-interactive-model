@@ -59,7 +59,7 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({ isOpen, onCl
           tabIndex={-1}
         >
 
-          <div className="relative lg:w-2/5 flex-shrink-0 h-64 lg:h-full">
+          <div className="relative lg:w-2/5 flex-shrink-0 h-48 sm:h-64 lg:h-full">
             <img src={model.image} alt={model.name} className="w-full h-full object-cover" />
             {model.isOnline && (
               <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2">
@@ -94,11 +94,11 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({ isOpen, onCl
                     <p className="text-xs sm:text-sm text-gray-500">Active {model.lastActive}</p>
                   )}
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-xl sm:text-2xl font-bold text-purple-600 mb-2">${model.subscriptionPrice}/mo</div>
+                <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
+                  <div className="text-lg sm:text-xl font-bold text-purple-600">${model.subscriptionPrice}/mo</div>
                   <button
                     onClick={() => onSubscribe(model)}
-                    className="px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium text-sm sm:text-base whitespace-nowrap"
+                    className="px-3 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium text-sm sm:text-base whitespace-nowrap"
                   >
                     Subscribe
                   </button>
