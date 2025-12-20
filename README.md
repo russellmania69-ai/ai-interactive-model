@@ -35,6 +35,20 @@ node scripts/seed-mock.js
 
 The generated file is informational and can be used to extend the in-memory mock data or to craft additional fixtures.
 
+If you want the running dev server to pick up the seed data automatically, run the generator before starting the dev server. The generator also writes a small script to `public/seed-data.js` which assigns the data to `window.__SEED_DATA`. Example workflow:
+
+```bash
+node scripts/seed-mock.js
+VITE_USE_SUPABASE_MOCK=seed npm run dev
+```
+
+When these steps are followed, `createMockSupabase({ seeded: true })` will use the values from `window.__SEED_DATA` synchronously.
+
+Auto-fetch fallback
+-------------------
+
+If you run the dev server without `public/seed-data.js` but the file `public/seed-data.json` exists, the mock will attempt to fetch `/seed-data.json` asynchronously and merge it into the in-memory seed data when available. This is a non-blocking fallback; generate the JSON before starting the server for the best developer experience.
+
 
 Notes:
 - The mock provides a minimal subset of Supabase APIs (auth, simple `from()` queries, storage, functions).
