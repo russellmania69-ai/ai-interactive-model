@@ -10,12 +10,12 @@ describe('supabase-mock branch combinations', () => {
     return mock.from('whatever').select().then((r: any) => {
       expect(Array.isArray(r.data)).toBe(true);
       expect(r.data.length).toBe(0);
-      try { delete (globalThis as any).__SEED_DATA; } catch {}
+        try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
     });
   });
 
   it('does not merge when fetch.json returns primitive', async () => {
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+      try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
     (globalThis as any).fetch = async () => ({ ok: true, json: async () => 'nope' });
     const mock: any = createMockSupabase({ seeded: true });
     await new Promise((r) => setTimeout(r, 30));
@@ -29,6 +29,6 @@ describe('supabase-mock branch combinations', () => {
     const mock: any = createMockSupabase({ seeded: true });
     const s = await mock.from('empty_table').single();
     expect(s.data).toBeNull();
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+      try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
   });
 });

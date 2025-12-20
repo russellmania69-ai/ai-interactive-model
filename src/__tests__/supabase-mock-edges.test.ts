@@ -12,7 +12,7 @@ describe('supabase-mock edge branches', () => {
 
   it('update on missing seeded table returns null (exercises seededData assignment)', async () => {
     // ensure table does not exist in seededData
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
     const mock: any = createMockSupabase({ seeded: true });
     const up = await mock.from('missing_table').update({ test: 'x' });
     expect(up).toHaveProperty('data');
@@ -26,7 +26,7 @@ describe('supabase-mock edge branches', () => {
     expect(s).toHaveProperty('data');
     expect(s.data.id).toBe('s1');
     // cleanup
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
   });
 
   it('storage.upload returns null data shape', async () => {

@@ -9,7 +9,7 @@ describe('attempt to exercise remaining merge arms', () => {
     // ensure it's usable
     return m1.from('a').select().then((r: any) => {
       expect(r.data[0].id).toBe('a1');
-      try { delete (globalThis as any).__SEED_DATA; } catch {}
+      try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
       // call again without seed
       const m2: any = createMockSupabase({ seeded: true });
       return m2.from('a').select().then((r2: any) => {
@@ -19,7 +19,7 @@ describe('attempt to exercise remaining merge arms', () => {
   });
 
   it('fetch.json returns after a slight delay and merges', async () => {
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
     (globalThis as any).fetch = async () => ({ ok: true, json: async () => { await new Promise(r => setTimeout(r, 10)); return { delayed: [ { id: 'd1' } ] }; } });
     const mock: any = createMockSupabase({ seeded: true });
     await new Promise((r) => setTimeout(r, 30));
