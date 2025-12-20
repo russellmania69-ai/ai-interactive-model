@@ -67,7 +67,7 @@ jobs:
             echo "Creating Sentry release $RELEASE (debug log)"
             sentry-cli --log-level=debug releases --org "$SENTRY_ORG" new -p "$SENTRY_PROJECT" "$RELEASE"
           echo "Uploading sourcemaps from ./dist"
-            sentry-cli --log-level=debug releases --org "$SENTRY_ORG" files "$RELEASE" upload-sourcemaps ./dist --rewrite --validate --url-prefix "~/assets"
+            sentry-cli --log-level=debug releases --org "$SENTRY_ORG" upload-sourcemaps "$RELEASE" ./dist --rewrite --validate --url-prefix "~/assets" --project "$SENTRY_PROJECT"
             sentry-cli --log-level=debug releases --org "$SENTRY_ORG" finalize "$RELEASE"
             sentry-cli --log-level=debug releases --org "$SENTRY_ORG" deploys "$RELEASE" new -e production
 
