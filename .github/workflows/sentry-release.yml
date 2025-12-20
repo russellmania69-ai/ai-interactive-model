@@ -44,6 +44,14 @@ jobs:
         if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN == 'true' && steps.check_sentry.outputs.SENTRY_ORG == 'true' && steps.check_sentry.outputs.SENTRY_PROJECT == 'true'
         run: npm install -g @sentry/cli
 
+      - name: List accessible Sentry organizations (debug)
+        if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN == 'true'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          echo "Listing organizations accessible by token (may return none)"
+          sentry-cli --log-level=debug organizations list || sentry-cli --log-level=debug orgs list || echo "sentry-cli org list failed"
+
       - name: Create and upload Sentry release
         if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN == 'true' && steps.check_sentry.outputs.SENTRY_ORG == 'true' && steps.check_sentry.outputs.SENTRY_PROJECT == 'true'
         env:
