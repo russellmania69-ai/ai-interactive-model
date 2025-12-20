@@ -154,7 +154,7 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
 
   return {
     auth,
-    from: (_table: string) => createFrom(),
+    from: (table: string) => createFrom(table),
     storage,
     functions
   } as unknown;
