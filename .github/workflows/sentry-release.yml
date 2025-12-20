@@ -54,11 +54,14 @@ jobs:
           set -euo pipefail
           RELEASE=${{ github.sha }}
           echo "Creating Sentry release $RELEASE"
-          sentry-cli releases --org "$SENTRY_ORG" new -p "$SENTRY_PROJECT" "$RELEASE"
+            set -x
+            echo "sentry-cli version:"; sentry-cli --version || true
+            echo "Creating Sentry release $RELEASE (debug log)"
+            sentry-cli --log-level=debug releases --org "$SENTRY_ORG" new -p "$SENTRY_PROJECT" "$RELEASE"
           echo "Uploading sourcemaps from ./dist"
-          sentry-cli releases --org "$SENTRY_ORG" files "$RELEASE" upload-sourcemaps ./dist --rewrite --validate --url-prefix "~/assets"
-          sentry-cli releases --org "$SENTRY_ORG" finalize "$RELEASE"
-          sentry-cli releases --org "$SENTRY_ORG" deploys "$RELEASE" new -e production
+            sentry-cli --log-level=debug releases --org "$SENTRY_ORG" files "$RELEASE" upload-sourcemaps ./dist --rewrite --validate --url-prefix "~/assets"
+            sentry-cli --log-level=debug releases --org "$SENTRY_ORG" finalize "$RELEASE"
+            sentry-cli --log-level=debug releases --org "$SENTRY_ORG" deploys "$RELEASE" new -e production
 
       - name: Skip Sentry steps (missing secrets)
         if: steps.check_sentry.outputs.SENTRY_AUTH_TOKEN != 'true' || steps.check_sentry.outputs.SENTRY_ORG != 'true' || steps.check_sentry.outputs.SENTRY_PROJECT != 'true'
