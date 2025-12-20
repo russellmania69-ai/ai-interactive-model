@@ -5,11 +5,11 @@ import { createMockSupabase } from '../lib/supabase-mock';
 describe('createMockSupabase additional behavior', () => {
   beforeEach(() => {
     // clear any global seed between tests
-    try { delete (globalThis as any).__SEED_DATA; } catch { }
+    try { delete (globalThis as any).__SEED_DATA; } catch { /* ignore */ }
   });
 
   afterEach(() => {
-    try { delete (globalThis as any).__SEED_DATA; } catch { }
+    try { delete (globalThis as any).__SEED_DATA; } catch { /* ignore */ }
   });
 
   it('auth methods exist and return expected shapes', async () => {

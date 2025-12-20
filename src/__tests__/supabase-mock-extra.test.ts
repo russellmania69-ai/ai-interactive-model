@@ -18,13 +18,13 @@ type MockClient = {
 
 describe('supabase mock extra behaviors', () => {
   beforeEach(() => {
-    try { delete (globalThis as any).__SEED_DATA; } catch { }
-    try { delete (globalThis as any).fetch; } catch { }
+    try { delete (globalThis as any).__SEED_DATA; } catch { /* ignore */ }
+    try { delete (globalThis as any).fetch; } catch { /* ignore */ }
   });
 
   afterEach(() => {
-    try { delete (globalThis as any).__SEED_DATA; } catch { }
-    try { delete (globalThis as any).fetch; } catch { }
+    try { delete (globalThis as any).__SEED_DATA; } catch { /* ignore */ }
+    try { delete (globalThis as any).fetch; } catch { /* ignore */ }
   });
 
   it('supports chaining methods before select', async () => {
