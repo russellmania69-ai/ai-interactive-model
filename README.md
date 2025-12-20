@@ -2,6 +2,34 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+Local development without Supabase
+---------------------------------
+
+If you don't have a Supabase project or don't want to configure env vars locally, the repo includes a
+lightweight mock implementation to run the frontend without a backend. To use it:
+
+- Copy the example env file and optionally enable the mock:
+
+```bash
+cp .env.local.example .env.local
+# in .env.local set VITE_USE_SUPABASE_MOCK=true or run the dev server with the env var
+VITE_USE_SUPABASE_MOCK=true npm run dev
+```
+
+You can enable a seeded mock to populate the UI with sample data using:
+
+```bash
+# run with seeded sample data
+VITE_USE_SUPABASE_MOCK=seed npm run dev
+```
+
+Notes:
+- The mock provides a minimal subset of Supabase APIs (auth, simple `from()` queries, storage, functions).
+- The mock is intended for UI development only and should not be used in CI/production.
+- For full functionality (auth, DB, storage), configure real Supabase credentials and set `VITE_SUPABASE_URL`
+	and `VITE_SUPABASE_ANON_KEY` in `.env.local` or your deployment provider.
+
+
 **Production readiness checklist**
 
 - [ ] Rotate any exposed keys (Supabase key was removed from the repo history).
@@ -44,6 +72,21 @@ Steps to add a secret in GitHub:
 1. Go to your repository on GitHub → Settings → Secrets and variables → Actions.
 2. Click "New repository secret" and add the secret name and value.
 3. The app will initialize Sentry automatically at startup when `VITE_SENTRY_DSN` is present.
+
+Additional Sentry setup notes
+
+- Local example: copy `.env.production.example` to `.env.production` and set your DSN there for local production builds. This file is intentionally ignored by git.
+- CI / Build: ensure `VITE_SENTRY_DSN` is present in your build environment so Vite embeds it at build time. Example for GitHub Actions (build step):
+
+```yaml
+- name: Build
+	run: npm run build
+	env:
+		VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+```
+
+- Hosting providers: set `VITE_SENTRY_DSN` in your host's environment variables (Vercel/Netlify/Render) and trigger a redeploy so the built site contains the DSN.
+- Security: `VITE_SENTRY_DSN` is public (browser) and safe to embed; keep `SENTRY_AUTH_TOKEN` in GitHub Secrets for CI-only use.
 
 
 # React + TypeScript + Vite
