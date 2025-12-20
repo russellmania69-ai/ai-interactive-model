@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// Expanded seed generator for the Supabase mock.
-// Writes `scripts/seed-data.json`, `public/seed-data.json` and `public/seed-data.js`.
+// CommonJS copy of seed generator for projects that use "type": "module"
 const fs = require('fs');
 const path = require('path');
 
