@@ -27,7 +27,7 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
   };
 
   // Simple in-memory tables used when `seeded` is enabled.
-  const seededData = options?.seeded
+  let seededData = options?.seeded
     ? {
         user_profiles: [
           { id: 'user_1', email: 'alice@example.com', full_name: 'Alice', role: 'user', avatar_url: '', created_at: new Date().toISOString() },
@@ -45,6 +45,43 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
         email_logs: []
       }
     : {} as Record<string, Record<string, unknown>[]>;
+
+  // If the consumer generated a `public/seed-data.js` that sets `window.__SEED_DATA`,
+  // prefer that synchronous seed over the default. This allows developers to run
+  // `node scripts/seed-mock.js` before starting the dev server so the UI picks
+  // up sample data immediately.
+  try {
+    const g = globalThis as unknown as { __SEED_DATA?: unknown };
+    const globalSeed = g.__SEED_DATA;
+    if (options?.seeded && globalSeed && typeof globalSeed === 'object') {
+      seededData = { ...(seededData || {}), ...(globalSeed as Record<string, Record<string, unknown>[]>) };
+    }
+  } catch {
+    // ignore
+  }
+
+  // If seeded mode is enabled but no `window.__SEED_DATA` was present synchronously,
+  // attempt to fetch `/seed-data.json` from the public folder and merge it in when
+  // available. This is non-blocking and provides a convenient fallback for developers
+  // who generate `public/seed-data.json` before starting the dev server but for
+  // any reason don't have the loader script injected.
+  try {
+    const g = globalThis as unknown as { __SEED_DATA?: unknown };
+    if (options?.seeded && !g.__SEED_DATA && typeof fetch === 'function') {
+      void fetch('/seed-data.json')
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data && typeof data === 'object') {
+            seededData = { ...(seededData || {}), ...(data as Record<string, Record<string, unknown>[]>) };
+          }
+        })
+        .catch(() => {
+          // ignore fetch errors
+        });
+    }
+  } catch {
+    // ignore
+  }
 
   function createFrom(table?: string) {
     type Chain = {
