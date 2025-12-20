@@ -5,7 +5,7 @@ import { createMockSupabase } from '../lib/supabase-mock';
 describe('supabase-mock fetch fallback and non-seeded paths', () => {
   it('merges seed from fetch fallback when available', async () => {
     // ensure no synchronous global seed
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
 
     // mock global fetch to return seed data
     (globalThis as any).fetch = async () => ({

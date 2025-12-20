@@ -14,11 +14,11 @@ describe('supabase-mock final branch coverage', () => {
     expect(() => createMockSupabase({ seeded: true })).not.toThrow();
 
     // cleanup
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
   });
 
   it('handles fetch rejection gracefully (promise catch branch)', async () => {
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
     (globalThis as any).fetch = async () => { throw new Error('network'); };
 
     const mock: any = createMockSupabase({ seeded: true });
@@ -35,7 +35,7 @@ describe('supabase-mock final branch coverage', () => {
     const res = await mock.from('gen_table').insert();
     expect(res).toHaveProperty('data');
     expect(res.data).toHaveProperty('id');
-    try { delete (globalThis as any).__SEED_DATA; } catch {}
+    try { delete (globalThis as any).__SEED_DATA; } catch (e) { /* ignore */ }
   });
 
   it('getPublicUrl returns empty string for falsy path', () => {
