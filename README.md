@@ -23,6 +23,19 @@ You can enable a seeded mock to populate the UI with sample data using:
 VITE_USE_SUPABASE_MOCK=seed npm run dev
 ```
 
+Seed generator
+----------------
+
+You can regenerate example fixture data used as a starting point with the included script:
+
+```bash
+# generates scripts/seed-data.json
+node scripts/seed-mock.js
+```
+
+The generated file is informational and can be used to extend the in-memory mock data or to craft additional fixtures.
+
+
 Notes:
 - The mock provides a minimal subset of Supabase APIs (auth, simple `from()` queries, storage, functions).
 - The mock is intended for UI development only and should not be used in CI/production.
