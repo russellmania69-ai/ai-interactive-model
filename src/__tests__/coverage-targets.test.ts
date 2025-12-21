@@ -149,6 +149,114 @@ describe('coverage targets: examples and rate limiter', () => {
     expect(statusCalls.length > 0).toBe(true);
   });
 
+  it('proxy handler uses provided model when present', async () => {
+    vi.resetModules();
+    process.env.ANTHROPIC_API_KEY = 'akey';
+    process.env.PROXY_API_KEY = 'pkey';
+    process.env.PROXY_RATE_LIMIT = '1000';
+    vi.doMock('../../../src/lib/proxy-rate-limit', () => ({ initRateLimiter: async () => {}, isRateLimited: async () => false }));
+    vi.stubGlobal('fetch', async () => ({ status: 200, json: async () => ({ usedModel: 'custom' }) } as any));
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => (h === 'x-api-key' ? 'pkey' : ''), body: { input: 'hi', model: 'custom' }, ip: '1.2.3.4', headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+    vi.unstubAllGlobals();
+    vi.unmock('../../../src/lib/proxy-rate-limit');
+  });
+
+  it('proxy handler returns 429 when rate limited', async () => {
+    vi.resetModules();
+    process.env.ANTHROPIC_API_KEY = 'akey';
+    process.env.PROXY_API_KEY = 'pkey';
+    process.env.PROXY_RATE_LIMIT = '1';
+    vi.doMock('../../../src/lib/proxy-rate-limit', () => ({ initRateLimiter: async () => {}, isRateLimited: async () => true }));
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => (h === 'x-api-key' ? 'pkey' : ''), body: { input: 'hi' }, ip: '1.2.3.4', headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+    vi.unmock('../../../src/lib/proxy-rate-limit');
+  });
+
+  it('jwt issuer passes expiresIn option to jwt.sign', async () => {
+    vi.resetModules();
+    process.env.PROXY_ISSUER_ADMIN_KEY = 'good';
+    process.env.PROXY_JWT_SECRET = 'secret';
+    let capturedOpts: any = null;
+    vi.doMock('jsonwebtoken', () => ({ default: { sign: (_p: any, _s: any, opts: any) => { capturedOpts = opts; return 't'; } } }));
+    const mod = await import('../../../examples/express/jwt-issuer-express');
+    const app: any = mod.default;
+    const layer = app._router.stack.find((l: any) => l.route && l.route.path === '/issuer/token');
+    const handler = layer.route.stack[0].handle;
+
+    const req = { header: (h: string) => (h === 'x-admin-key' ? 'good' : ''), body: { sub: 'c', expiresIn: '2h' } } as unknown as Request;
+    let jsonBody: any = null;
+    const res = { status(code: number) { return this; }, json(obj: any) { jsonBody = obj; return obj; } } as unknown as Response;
+    await handler(req, res);
+    expect(capturedOpts && capturedOpts.expiresIn === '2h').toBe(true);
+    vi.unmock('jsonwebtoken');
+  });
+
+  it('jwt issuer defaults sub to "client" and expiresIn to "1h" when missing', async () => {
+    vi.resetModules();
+    process.env.PROXY_ISSUER_ADMIN_KEY = 'good';
+    process.env.PROXY_JWT_SECRET = 'secret';
+    let capturedPayload: any = null;
+    let capturedOpts: any = null;
+    vi.doMock('jsonwebtoken', () => ({ default: { sign: (payload: any, _secret: any, opts: any) => { capturedPayload = payload; capturedOpts = opts; return 't'; } } }));
+    const mod = await import('../../../examples/express/jwt-issuer-express');
+    const app: any = mod.default;
+    const layer = app._router.stack.find((l: any) => l.route && l.route.path === '/issuer/token');
+    const handler = layer.route.stack[0].handle;
+
+    const req = { header: (h: string) => (h === 'x-admin-key' ? 'good' : ''), body: {} } as unknown as Request;
+    const res = { status(code: number) { return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await handler(req, res);
+    expect(capturedPayload && capturedPayload.sub === 'client').toBe(true);
+    expect(capturedOpts && capturedOpts.expiresIn === '1h').toBe(true);
+    vi.unmock('jsonwebtoken');
+  });
+
+  it('proxy handler returns 401 when PROXY_API_KEY is set and provided key mismatches', async () => {
+    vi.resetModules();
+    process.env.PROXY_API_KEY = 'expected';
+    delete process.env.PROXY_JWT_SECRET;
+    process.env.ANTHROPIC_API_KEY = 'akey';
+    process.env.PROXY_RATE_LIMIT = '1000';
+    // do not mock proxy-rate-limit so default in-memory is used but high limit avoids blocking
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => (h === 'x-api-key' ? 'wrong' : ''), body: { input: 'hi' }, ip: '1.2.3.4', headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+  });
+
+  it('proxy handler accepts matching PROXY_API_KEY and uses providedKey as clientId', async () => {
+    vi.resetModules();
+    process.env.PROXY_API_KEY = 'matchme';
+    delete process.env.PROXY_JWT_SECRET;
+    process.env.ANTHROPIC_API_KEY = 'akey';
+    process.env.PROXY_RATE_LIMIT = '1000';
+    vi.doMock('../../../src/lib/proxy-rate-limit', () => ({ initRateLimiter: async () => {}, isRateLimited: async () => false }));
+    vi.stubGlobal('fetch', async () => ({ status: 200, json: async () => ({ ok: true }) } as any));
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => (h === 'x-api-key' ? 'matchme' : ''), body: { input: 'hi' }, ip: undefined, headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+    vi.unstubAllGlobals();
+    vi.unmock('../../../src/lib/proxy-rate-limit');
+  });
+
   it('proxy handler JWKS path forwards upstream status', async () => {
     vi.resetModules();
     process.env.PROXY_RATE_LIMIT = '1000';
