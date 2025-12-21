@@ -13,5 +13,5 @@ export async function verifyWithJWKS(token: string, jwksUrl: string) {
   const JWKS = createRemoteJWKSet(new URL(jwksUrl));
   // Allow common RSA algorithms; adjust as needed for your keys
   const { payload } = await jwtVerify(token, JWKS, { algorithms: ['RS256', 'PS256'] });
-  return payload as Record<string, any>;
+  return payload as Record<string, unknown>;
 }

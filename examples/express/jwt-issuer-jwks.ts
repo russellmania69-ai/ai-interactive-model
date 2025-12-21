@@ -12,7 +12,7 @@ app.use(express.json());
 
 let privateKeyPem: string | null = null;
 let jwk: any = null; // exportable JWK
-let kid = process.env.PROXY_JWKS_KID || 'dev-key-1';
+const kid = process.env.PROXY_JWKS_KID || 'dev-key-1';
 
 async function ensureKey() {
   if (privateKeyPem && jwk) return;
