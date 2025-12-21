@@ -2,6 +2,7 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { initRateLimiter, isRateLimited } from '../../src/lib/proxy-rate-limit';
+import { verifyWithJWKS } from '../../src/lib/jwks';
 
 // Small Express proxy example. This is for self-hosted use (e.g., a small server).
 // Environment vars required:
@@ -24,8 +25,17 @@ app.post('/proxy/anthropic', async (req: Request, res: Response) => {
   const providedKey = req.header('x-api-key') || '';
 
   let clientId = providedKey || 'anon';
-  if (jwtSecret) {
-    const auth = req.header('authorization') || '';
+  const auth = req.header('authorization') || '';
+  const jwksUrl = process.env.PROXY_JWKS_URL;
+  if (jwksUrl && auth.startsWith('Bearer ')) {
+    const token = auth.slice(7).trim();
+    try {
+      const payload = await verifyWithJWKS(token, jwksUrl);
+      clientId = String(payload?.sub ?? payload?.id ?? clientId);
+    } catch (e: any) {
+      return res.status(401).json({ error: 'Invalid token (jwks)' });
+    }
+  } else if (jwtSecret) {
     if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing Bearer token' });
     const token = auth.slice(7).trim();
     try {
