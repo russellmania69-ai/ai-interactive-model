@@ -28,6 +28,18 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Netlify token & site
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          # Confirm the token can access the site and fail with clearer message
+          npx netlify-cli sites:info --site "$NETLIFY_SITE_ID" || {
+            echo "NETLIFY token or site ID invalid or unauthorized. Confirm token belongs to the site owner/team." >&2
+            npx netlify-cli teams:list || true
+            exit 1
+          }
+
       - name: Deploy to Netlify (non-interactive)
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
