@@ -18,7 +18,11 @@ const DEFAULT_MODEL = process.env.VITE_DEFAULT_LLM || process.env.DEFAULT_LLM ||
 const app = express();
 app.use(express.json());
 
-app.post('/proxy/anthropic', async (req: Request, res: Response) => {
+export function extractClientId(payload: any, currentClientId: string) {
+  return String(payload?.sub ?? payload?.id ?? currentClientId);
+}
+
+export async function proxyHandler(req: Request, res: Response) {
   await initRateLimiter();
 
   const jwtSecret = process.env.PROXY_JWT_SECRET;
@@ -31,7 +35,7 @@ app.post('/proxy/anthropic', async (req: Request, res: Response) => {
     const token = auth.slice(7).trim();
     try {
       const payload = await verifyWithJWKS(token, jwksUrl);
-      clientId = String(payload?.sub ?? payload?.id ?? clientId);
+      clientId = extractClientId(payload, clientId);
     } catch (e: any) {
       return res.status(401).json({ error: 'Invalid token (jwks)' });
     }
@@ -74,11 +78,18 @@ app.post('/proxy/anthropic', async (req: Request, res: Response) => {
     console.error('Anthropic proxy error:', err?.message || err);
     return res.status(500).json({ error: 'Proxy request failed', details: String(err?.message || err) });
   }
-});
+}
+
+app.post('/proxy/anthropic', proxyHandler);
+
+export function startServer(portArg?: number) {
+  const port = Number(portArg || process.env.PORT || 3000);
+  const srv = app.listen(port, () => console.log(`Anthropic proxy (Express) listening on http://localhost:${port}`));
+  return srv;
+}
 
 if (require.main === module) {
-  const port = Number(process.env.PORT || 3000);
-  app.listen(port, () => console.log(`Anthropic proxy (Express) listening on http://localhost:${port}`));
+  startServer();
 }
 
 export default app;
