@@ -4,6 +4,106 @@ on:
   push:
     branches: [ main, master ]
   pull_request:
+
+jobs:
+  ci:
+    name: Tests, Lint, Build, E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${PROXY_JWT_SECRET:-}" ] || [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "Missing required secrets: PROXY_JWT_SECRET and/or ANTHROPIC_API_KEY"
+            exit 1
+          fi
+        env:
+          PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test --silent
+
+      - name: Run lint
+        run: npm run lint --silent
+
+      - name: Build (production)
+        run: npm run build --silent
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: npm run e2e --silent
+
+      - name: Notify Slack (optional)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            payload=$(jq -n --arg repo "${{ github.repository }}" --arg workflow "${{ github.workflow }}" --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" '{text: "CI workflow completed for " + $repo + " - " + $workflow + "\n<" + $url + "|View run>"}')
+            curl -s -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK_URL }}" || true
+          fi
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-build-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests with coverage
+        run: npx vitest run --coverage
+
+      - name: Check branch coverage threshold
+        run: |
+          node -e 'const fs=require("fs");const p="coverage/coverage-final.json";if(!fs.existsSync(p)){console.error("coverage file not found");process.exit(1);}const j=JSON.parse(fs.readFileSync(p,"utf8"));let totalB=0,totalBCov=0;for(const k in j){const b=j[k].b||{};for(const i in b){const arr=b[i]||[];totalB+=arr.length;totalBCov+=arr.filter(n=>n>0).length;}}const pct=(totalB? totalBCov/totalB*100:100);console.log("Branch coverage: "+pct.toFixed(2)+"%");if(pct<90){console.error("Branch coverage below threshold (90%)");process.exit(1);} '
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate || true
+
+      - name: Upload coverage artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
     branches: [ main, master ]
 
 jobs:
@@ -19,7 +119,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Lint
         run: npm run lint
       - name: Test and coverage
@@ -58,7 +158,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Build (ensure dist)
         run: npm run build
       - name: Install Playwright deps

@@ -153,6 +153,38 @@ npm run build
 npm run preview
 ```
 
+Local production checks
+-----------------------
+
+To validate required runtime secrets locally before deploying, set them in your shell and run the project's production checks:
+
+```bash
+# replace with your real values for a local smoke test
+export PROXY_JWT_SECRET='replace-me'
+export ANTHROPIC_API_KEY='replace-me'
+
+# verify required env vars
+npm run check:prod
+
+# run build to ensure bundling succeeds
+npm run build
+
+# optionally build the Docker image locally (requires Docker Desktop)
+docker build -t ai-interactive-model:local .
+```
+
+GitHub Secrets
+--------------
+
+Add the following repository secrets (Settings → Secrets and variables → Actions) so CI and deploy workflows run successfully:
+
+- `PROXY_JWT_SECRET`
+- `ANTHROPIC_API_KEY`
+- `VITE_SUPABASE_URL` (optional for full Supabase integration)
+- `VITE_SUPABASE_ANON_KEY` (optional)
+
+CI will now fail fast if `PROXY_JWT_SECRET` or `ANTHROPIC_API_KEY` are missing.
+
 Deployment notes:
 
 - GitHub Actions workflows are included: `ci.yml` (lint+build), `pages-deploy.yml` (GitHub Pages), and `netlify-deploy.yml` (Netlify). Each expects secrets to be configured in the GitHub repository settings.

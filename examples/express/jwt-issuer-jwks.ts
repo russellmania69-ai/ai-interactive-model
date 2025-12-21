@@ -3,12 +3,16 @@ import { generateKeyPair } from 'jose/util/generate_key_pair';
 import { exportJWK } from 'jose/key/export';
 import jwt from 'jsonwebtoken';
 import type { Request, Response } from 'express';
+import attachSentryToExpress from '../../src/lib/express-middleware/sentry-express';
 
 // JWKS-based issuer example. For production, provide `PROXY_JWT_PRIVATE_KEY` (PEM) and
 // `PROXY_JWKS_KID`. For local dev this example will generate an RSA keypair on startup.
 
 const app = express();
 app.use(express.json());
+
+// Start attaching Sentry early; register function will be called after routes
+const _sentryRegisterPromise = attachSentryToExpress(app);
 
 let privateKeyPem: string | null = null;
 let jwk: any = null; // exportable JWK
@@ -67,3 +71,9 @@ if (require.main === module) {
 }
 
 export default app;
+
+// Register Sentry error handler after routes are set up
+(async () => {
+  const register = await _sentryRegisterPromise;
+  if (typeof register === 'function') register();
+})();

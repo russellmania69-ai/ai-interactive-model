@@ -2,10 +2,18 @@
 // DO NOT commit your Anthropic API key. Set `ANTHROPIC_API_KEY` in your deployment provider.
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import fetchWithRetry from '../src/lib/fetch-with-retry';
+import initServerSentry from '../src/lib/sentry-server';
+import { setSecurityHeadersVercel } from '../src/lib/security-headers';
+
+// Initialize Sentry for server-side error reporting when configured
+void initServerSentry();
 
 const DEFAULT_MODEL = process.env.VITE_DEFAULT_LLM || process.env.DEFAULT_LLM || 'claude-sonnet-4.5';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Apply security headers where available
+  try { setSecurityHeadersVercel(res); } catch { /* ignore */ }
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -25,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Replace the URL and payload as needed for the Anthropic API you intend to call.
     // Example uses Anthropic "complete" endpoint style; check Anthropic docs for exact payload/URL.
-    const resp = await fetch('https://api.anthropic.com/v1/complete', {
+    const resp = await fetchWithRetry('https://api.anthropic.com/v1/complete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
