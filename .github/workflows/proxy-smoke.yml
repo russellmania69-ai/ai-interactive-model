@@ -30,6 +30,13 @@ jobs:
           ports:
             - 6379:6379
 
+      - name: Fail early if required secrets are missing
+        run: |
+          if [ -z "${{ secrets.PROXY_JWT_SECRET }}" ] || [ -z "${{ secrets.PROXY_ISSUER_ADMIN_KEY }}" ] || [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "Required secrets PROXY_JWT_SECRET, PROXY_ISSUER_ADMIN_KEY or ANTHROPIC_API_KEY are missing in repo secrets." >&2
+            exit 1
+          fi
+
       - name: Run unit tests (fast)
         env:
           PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
