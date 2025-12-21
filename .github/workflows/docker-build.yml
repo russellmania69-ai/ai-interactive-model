@@ -49,13 +49,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Scan built image with Trivy
-        uses: aquasecurity/trivy-action@v0.4.19
-        with:
-          image-ref: ghcr.io/${{ github.repository }}/ai-interactive-model:build-${{ github.sha }}
-          format: 'table'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
+      - name: Scan built image with Trivy (docker)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format table --severity HIGH,CRITICAL --exit-code 1 ghcr.io/${{ github.repository }}/ai-interactive-model:build-${{ github.sha }}
 
       - name: Push image to GHCR
         run: |
