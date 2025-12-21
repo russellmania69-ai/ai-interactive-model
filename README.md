@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+[![codecov](https://codecov.io/gh/russellmania69-ai/ai-interactive-model/branch/main/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/russellmania69-ai/ai-interactive-model)
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Local development without Supabase
@@ -55,6 +57,22 @@ Notes:
 - The mock is intended for UI development only and should not be used in CI/production.
 - For full functionality (auth, DB, storage), configure real Supabase credentials and set `VITE_SUPABASE_URL`
 	and `VITE_SUPABASE_ANON_KEY` in `.env.local` or your deployment provider.
+
+LLM Provider (optional)
+-----------------------
+You can set a default LLM provider used by client builds via `VITE_DEFAULT_LLM`. To enable Claude Sonnet 4.5 for all clients, set:
+
+```
+VITE_DEFAULT_LLM=claude-sonnet-4.5
+```
+
+This project does not currently include a built-in Anthropic/Claude integration; setting this env var surfaces the default value to client code via `src/lib/llm.ts`. To fully enable Claude Sonnet 4.5 you will need to:
+
+- Add server-side credentials and/or an API proxy that performs Anthropic API calls (do not embed private keys in the browser).
+- Wire the provider in your backend or serverless functions to route requests to Anthropic using the chosen model name.
+
+If you want, I can open a PR that wires `DEFAULT_LLM` into specific request code or add a serverless proxy example.
+
 
 
 **Production readiness checklist**
