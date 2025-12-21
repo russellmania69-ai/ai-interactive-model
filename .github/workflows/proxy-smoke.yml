@@ -1,0 +1,32 @@
+name: Proxy smoke tests
+
+on:
+  push:
+    branches: [ main, master, test/** ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    name: Run Express issuer + proxy smoke tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests (fast)
+        env:
+          PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
+          PROXY_ISSUER_ADMIN_KEY: ${{ secrets.PROXY_ISSUER_ADMIN_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npx vitest run --run
+
+      - name: Show coverage summary
+        run: npx vitest run --coverage --run || true
