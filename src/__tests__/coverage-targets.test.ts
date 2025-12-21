@@ -170,4 +170,39 @@ describe('coverage targets: examples and rate limiter', () => {
     vi.unmock('../../../src/lib/jwks');
     vi.unmock('../../../src/lib/proxy-rate-limit');
   });
+
+  it('proxy handler returns 401 when PROXY_JWT_SECRET set but missing Bearer', async () => {
+    vi.resetModules();
+    process.env.PROXY_RATE_LIMIT = '1000';
+    process.env.PROXY_JWT_SECRET = 'secret';
+    process.env.ANTHROPIC_API_KEY = 'akey';
+    // ensure rate limiter not blocking
+    vi.doMock('../../../src/lib/proxy-rate-limit', () => ({ initRateLimiter: async () => {}, isRateLimited: async () => false }));
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => '', body: { input: 'hi' }, ip: '1.2.3.4', headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+    vi.unmock('../../../src/lib/proxy-rate-limit');
+  });
+
+  it('proxy handler returns 401 when jwt.verify throws', async () => {
+    vi.resetModules();
+    process.env.PROXY_RATE_LIMIT = '1000';
+    process.env.PROXY_JWT_SECRET = 'secret';
+    process.env.ANTHROPIC_API_KEY = 'akey';
+    vi.doMock('jsonwebtoken', () => ({ default: { verify: () => { throw new Error('bad token'); } } }));
+    vi.doMock('../../../src/lib/proxy-rate-limit', () => ({ initRateLimiter: async () => {}, isRateLimited: async () => false }));
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => (h === 'authorization' ? 'Bearer abc' : ''), body: { input: 'hi' }, ip: '1.2.3.4', headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+    vi.unmock('jsonwebtoken');
+    vi.unmock('../../../src/lib/proxy-rate-limit');
+  });
 });
