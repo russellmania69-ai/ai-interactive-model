@@ -97,6 +97,8 @@
     "@types/express": "^4.17.21",
     "jsonwebtoken": "^9.0.0",
     "@types/jsonwebtoken": "^9.0.2",
-    "ioredis": "^5.3.2"
+    "ioredis": "^5.3.2",
+    "jose": "^4.16.5"
   }
 }
+
