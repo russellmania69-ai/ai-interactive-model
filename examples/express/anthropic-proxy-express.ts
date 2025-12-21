@@ -1,5 +1,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import { initRateLimiter, isRateLimited } from '../../src/lib/proxy-rate-limit';
 
 // Small Express proxy example. This is for self-hosted use (e.g., a small server).
 // Environment vars required:
@@ -10,28 +12,35 @@ import type { Request, Response } from 'express';
 
 const DEFAULT_MODEL = process.env.VITE_DEFAULT_LLM || process.env.DEFAULT_LLM || 'claude-sonnet-4.5';
 
-const RATE_LIMIT = Number(process.env.PROXY_RATE_LIMIT || '20');
-const RATE_WINDOW_MS = Number(process.env.PROXY_RATE_WINDOW_MS || String(60 * 1000));
-const hits: Record<string, number[]> = {};
-
-function isRateLimited(key: string) {
-  const now = Date.now();
-  hits[key] = (hits[key] || []).filter((t) => now - t <= RATE_WINDOW_MS);
-  if (hits[key].length >= RATE_LIMIT) return true;
-  hits[key].push(now);
-  return false;
-}
+// Rate limiter is handled by `src/lib/proxy-rate-limit` which supports Redis or in-memory fallback.
 
 const app = express();
 app.use(express.json());
 
 app.post('/proxy/anthropic', async (req: Request, res: Response) => {
-  const proxyKey = process.env.PROXY_API_KEY;
-  const providedKey = req.header('x-api-key') || '';
-  if (!proxyKey || providedKey !== proxyKey) return res.status(401).json({ error: 'Unauthorized' });
+  await initRateLimiter();
 
-  const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-  if (isRateLimited(String(ip))) return res.status(429).json({ error: 'Too Many Requests' });
+  const jwtSecret = process.env.PROXY_JWT_SECRET;
+  const providedKey = req.header('x-api-key') || '';
+
+  let clientId = providedKey || 'anon';
+  if (jwtSecret) {
+    const auth = req.header('authorization') || '';
+    if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing Bearer token' });
+    const token = auth.slice(7).trim();
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as any;
+      clientId = String(decoded?.sub ?? decoded?.id ?? clientId);
+    } catch (e: any) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+  } else {
+    const proxyKey = process.env.PROXY_API_KEY;
+    if (!proxyKey || providedKey !== proxyKey) return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const ip = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
+  if (await isRateLimited(`${clientId}:${ip}`)) return res.status(429).json({ error: 'Too Many Requests' });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(501).json({ error: 'Anthropic API key not configured (ANTHROPIC_API_KEY)' });

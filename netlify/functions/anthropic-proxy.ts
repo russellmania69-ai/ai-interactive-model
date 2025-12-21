@@ -7,30 +7,37 @@ import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
 const DEFAULT_MODEL = process.env.VITE_DEFAULT_LLM || process.env.DEFAULT_LLM || 'claude-sonnet-4.5';
 
-// Simple in-memory rate limiter (per IP). Not suitable for multi-instance production.
-const RATE_LIMIT = Number(process.env.PROXY_RATE_LIMIT || '5'); // requests
-const RATE_WINDOW_MS = Number(process.env.PROXY_RATE_WINDOW_MS || String(60 * 1000));
-const hits: Record<string, number[]> = {};
-
-function isRateLimited(key: string) {
-  const now = Date.now();
-  hits[key] = (hits[key] || []).filter((t) => now - t <= RATE_WINDOW_MS);
-  if (hits[key].length >= RATE_LIMIT) return true;
-  hits[key].push(now);
-  return false;
-}
+import { initRateLimiter, isRateLimited } from '../../src/lib/proxy-rate-limit';
+import jwt from 'jsonwebtoken';
 
 const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
 
-  const proxyKey = process.env.PROXY_API_KEY;
+  await initRateLimiter();
+
+  const jwtSecret = process.env.PROXY_JWT_SECRET;
   const providedKey = event.headers['x-api-key'] || event.headers['X-Api-Key'] || '';
-  if (!proxyKey || providedKey !== proxyKey) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+
+  let clientId = providedKey || 'anon';
+  if (jwtSecret) {
+    const auth = event.headers.authorization || event.headers.Authorization || '';
+    if (!auth.startsWith('Bearer ')) return { statusCode: 401, body: JSON.stringify({ error: 'Missing Bearer token' }) };
+    const token = auth.slice(7).trim();
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as any;
+      clientId = String(decoded?.sub ?? decoded?.id ?? clientId);
+    } catch (e: any) {
+      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid token' }) };
+    }
+  } else {
+    const proxyKey = process.env.PROXY_API_KEY;
+    if (!proxyKey || providedKey !== proxyKey) {
+      return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+    }
   }
 
   const ip = event.headers['x-forwarded-for'] || event.headers['x-nf-client-connection-ip'] || event.requestContext?.identity?.sourceIp || 'unknown';
-  if (isRateLimited(ip)) return { statusCode: 429, body: JSON.stringify({ error: 'Too Many Requests' }) };
+  if (await isRateLimited(`${clientId}:${ip}`)) return { statusCode: 429, body: JSON.stringify({ error: 'Too Many Requests' }) };
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { statusCode: 501, body: JSON.stringify({ error: 'Anthropic API key not configured (ANTHROPIC_API_KEY)' }) };
