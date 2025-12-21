@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,12 +35,8 @@ export default function EmailAnalytics() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    fetchEmailData();
-  }, []);
-
-  const fetchEmailData = async () => {
+   
+  const fetchEmailData = useCallback(async () => {
     setLoading(true);
     
     const { data: emailLogs } = await supabase
@@ -56,7 +52,11 @@ export default function EmailAnalytics() {
     }
     
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchEmailData();
+  }, [fetchEmailData]);
 
   const calculateStats = (logs: EmailLog[]) => {
     const total = logs.length;

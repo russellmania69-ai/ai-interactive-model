@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Download, Share2, Image as ImageIcon, Sparkles, History, CheckSquare, Square, Trash2, Archive } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { RegenerateImageModal } from './RegenerateImageModal';
@@ -30,12 +30,8 @@ export function ImageGallery({ sessionId, onClose }: ImageGalleryProps) {
   });
   const [versions, setVersions] = useState<GalleryImage[]>([]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    loadImages();
-  }, [sessionId]);
-
-  const loadImages = async () => {
+   
+  const loadImages = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('chat_images')
@@ -50,7 +46,13 @@ export function ImageGallery({ sessionId, onClose }: ImageGalleryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    loadImages();
+  }, [loadImages]);
+
+  
 
   const loadVersions = async (imageId: string, parentId?: string) => {
     const rootId = parentId || imageId;
