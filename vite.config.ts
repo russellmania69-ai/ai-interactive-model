@@ -23,8 +23,11 @@ export default defineConfig(({ mode }) => ({
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return;
 
-          // Keep React in its own chunk
-          if (id.includes('react') || id.includes('react-dom')) return 'react-vendor';
+          // Keep React and react-dom together in the main vendor chunk
+          // (some libraries can have circular import patterns that break when React
+          // is split into a separate chunk; keeping them together avoids "A before
+          // initialization" runtime errors in the preview build)
+          if (id.includes('react') || id.includes('react-dom')) return 'vendor';
 
           // Supabase in a separate chunk
           if (id.includes('@supabase') || id.includes('supabase')) return 'supabase-vendor';
