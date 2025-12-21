@@ -1,0 +1,27 @@
+name: CI Debug
+
+on:
+  push:
+    branches: [ fix/merge-react-into-vendor ]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests and capture logs
+        run: |
+          mkdir -p artifacts
+          npx vitest run --coverage --reporter=dot 2>&1 | tee artifacts/vitest.log
+          cp coverage/coverage-final.json artifacts/coverage-final.json || true
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debug-artifacts
+          path: artifacts
