@@ -34,7 +34,7 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run tests
         env:
