@@ -72,6 +72,34 @@ This project does not currently include a built-in Anthropic/Claude integration;
 - Wire the provider in your backend or serverless functions to route requests to Anthropic using the chosen model name.
 
 If you want, I can open a PR that wires `DEFAULT_LLM` into specific request code or add a serverless proxy example.
+### Serverless proxy example (Vercel)
+
+We've added a minimal Vercel serverless function example at `api/anthropic-proxy.ts` that demonstrates a secure pattern for calling Anthropic/Claude from the server (clients call this endpoint, server holds the secret API key).
+
+Quick setup:
+
+1. Add your Anthropic API key to your deployment provider as `ANTHROPIC_API_KEY` (do NOT commit this key).
+2. (Optional) Set `VITE_DEFAULT_LLM=claude-sonnet-4.5` in build env or `DEFAULT_LLM=claude-sonnet-4.5` on the server.
+3. Deploy to Vercel (or adapt the code to your provider's serverless format). The function forwards the client's `input` and optional `model` to Anthropic and returns the API response.
+
+Client example (fetch from browser to your proxy):
+
+```js
+const resp = await fetch('/api/anthropic-proxy', {
+	method: 'POST',
+	headers: { 'Content-Type': 'application/json' },
+	body: JSON.stringify({ input: 'Write a short poem about winter.' })
+});
+const json = await resp.json();
+console.log(json);
+```
+
+Security notes:
+
+- Never embed `ANTHROPIC_API_KEY` or other private keys in client-side code. Use server-side secrets.
+- Adjust rate-limiting, authentication, and input sanitization in the proxy before using in production.
+
+If you want, I can also add a Netlify / Vercel function variant or a tiny Express server example and open a PR.
 
 
 
