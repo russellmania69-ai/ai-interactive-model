@@ -101,6 +101,15 @@ Security notes:
 
 If you want, I can also add a Netlify / Vercel function variant or a tiny Express server example and open a PR.
 
+Netlify function variant
+-----------------------
+There's a Netlify Functions example at `netlify/functions/anthropic-proxy.ts` that demonstrates a small proxy with:
+
+- `PROXY_API_KEY` check: clients must send `x-api-key` header matching this server secret.
+- In-memory rate limiting (per IP) controlled by `PROXY_RATE_LIMIT` and `PROXY_RATE_WINDOW_MS` env vars.
+
+Set `ANTHROPIC_API_KEY` and `PROXY_API_KEY` in Netlify site settings before deploying. The Netlify function uses the same Anthropic request pattern as the Vercel example.
+
 
 
 **Production readiness checklist**
