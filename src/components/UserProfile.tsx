@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,14 +47,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (user) {
-      loadUserData();
-    }
-  }, [user]);
-
-  const loadUserData = async () => {
+   
+  const loadUserData = useCallback(async () => {
     if (!user) return;
 
     const { data: profileData } = await supabase
@@ -90,7 +84,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       .order('created_at', { ascending: false });
     
     setSavedImages(imagesData || []);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
