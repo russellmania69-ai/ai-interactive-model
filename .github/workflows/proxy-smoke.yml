@@ -21,11 +21,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Start Redis service (for Redis-backed rate limiter)
+        if: always()
+        run: echo "Starting Redis service available at redis://localhost:6379"
+      services:
+        redis:
+          image: redis:7
+          ports:
+            - 6379:6379
+
       - name: Run unit tests (fast)
         env:
           PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
           PROXY_ISSUER_ADMIN_KEY: ${{ secrets.PROXY_ISSUER_ADMIN_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REDIS_URL: redis://localhost:6379
         run: npx vitest run --run
 
       - name: Show coverage summary
