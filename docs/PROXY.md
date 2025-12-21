@@ -42,3 +42,15 @@ CI
 
 Security notes
 - Never expose `ANTHROPIC_API_KEY` or `PROXY_JWT_SECRET` in client code or commit them to source. Use platform secrets (Vercel, Netlify, GitHub Actions secrets) for storage.
+
+Optional JWKS runtime dependency
+- If you set `PROXY_JWKS_URL` to validate tokens via a remote JWKS endpoint, the project uses a dynamic import of the `jose` library at runtime. `jose` is not required by default to keep installs lightweight for users who don't enable JWKS.
+- To enable JWKS verification in environments that don't permit dynamic installs, add `jose` to your project (for example):
+
+```bash
+npm install --save jose
+# or
+pnpm add jose
+```
+
+This ensures the `verifyWithJWKS` helper can import `jose` synchronously when validating tokens against a JWKS URL.

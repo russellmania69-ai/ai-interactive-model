@@ -9,6 +9,7 @@ const DEFAULT_MODEL = process.env.VITE_DEFAULT_LLM || process.env.DEFAULT_LLM ||
 
 import { initRateLimiter, isRateLimited } from '../../src/lib/proxy-rate-limit';
 import jwt from 'jsonwebtoken';
+import { verifyWithJWKS } from '../../src/lib/jwks';
 
 const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
@@ -19,7 +20,17 @@ const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) =
   const providedKey = event.headers['x-api-key'] || event.headers['X-Api-Key'] || '';
 
   let clientId = providedKey || 'anon';
-  if (jwtSecret) {
+  const jwksUrl = process.env.PROXY_JWKS_URL;
+  const auth = event.headers.authorization || event.headers.Authorization || '';
+  if (jwksUrl && auth?.startsWith('Bearer ')) {
+    const token = (auth || '').slice(7).trim();
+    try {
+      const payload = await verifyWithJWKS(token, jwksUrl);
+      clientId = String(payload?.sub ?? payload?.id ?? clientId);
+    } catch (e: any) {
+      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid token (jwks)' }) };
+    }
+  } else if (jwtSecret) {
     const auth = event.headers.authorization || event.headers.Authorization || '';
     if (!auth.startsWith('Bearer ')) return { statusCode: 401, body: JSON.stringify({ error: 'Missing Bearer token' }) };
     const token = auth.slice(7).trim();
