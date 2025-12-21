@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "check:prod": "node scripts/check-prod-env.js",
+    "docker:build": "docker build -t ai-interactive-model:latest .",
+    "docker:build:no-cache": "docker build --no-cache -t ai-interactive-model:latest .",
     "e2e": "playwright test --config=playwright.config.ts",
     "e2e:ci": "npx playwright test --config=playwright.config.ts --reporter=list",
     "test": "vitest",
@@ -44,6 +47,7 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "@sentry/react": "^7.54.0",
     "@sentry/tracing": "^7.54.0",
+    "@sentry/node": "^7.54.0",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.56.2",
     "@types/uuid": "^10.0.0",
