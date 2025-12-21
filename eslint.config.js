@@ -29,18 +29,17 @@ const base = tseslint.config(
 );
 
 // Export a flat-config array: base config plus file-scoped overrides
-export default [
-  base,
-  {
-    files: [
-      "examples/**",
-      "netlify/**",
-      "api/**",
-      "scripts/**",
-      "coverage-artifact-**/**",
-    ],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
+const extra = {
+  files: [
+    "examples/**",
+    "netlify/**",
+    "api/**",
+    "scripts/**",
+    "coverage-artifact-**/**",
+  ],
+  rules: {
+    "@typescript-eslint/no-explicit-any": "off",
   },
-];
+};
+
+export default Array.isArray(base) ? [...base, extra] : [base, extra];
