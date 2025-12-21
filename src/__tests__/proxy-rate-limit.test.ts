@@ -34,3 +34,64 @@ describe('isRateLimited (in-memory)', () => {
     expect(a2).toBe(true);
   });
 });
+
+describe('isRateLimited (redis path)', () => {
+  it('uses redis incr and pexpire when REDIS_URL is set', async () => {
+    // Mock ioredis default export as a class
+    class MockRedis {
+      store = new Map();
+      constructor(url: string) {
+        // no-op
+      }
+      async ping() { return 'PONG'; }
+      async incr(key: string) {
+        const v = (this.store.get(key) || 0) + 1;
+        this.store.set(key, v);
+        return v;
+      }
+      async pexpire(_k: string, _ms: number) { return 1; }
+    }
+
+    vi.resetModules();
+    process.env.REDIS_URL = 'redis://localhost:6379';
+    vi.mock('ioredis', () => ({ default: class {
+      store = new Map();
+      constructor(_url: string) {}
+      async ping() { return 'PONG'; }
+      async incr(key: string) { const v = (this.store.get(key) || 0) + 1; this.store.set(key, v); return v; }
+      async pexpire(_k: string, _ms: number) { return 1; }
+    } }));
+
+    const { initRateLimiter, isRateLimited } = await import('../lib/proxy-rate-limit');
+    await initRateLimiter();
+
+    const key = 'redis-key';
+    // first call should not be blocked for limit=1
+    const first = await isRateLimited(key, 1, 60_000);
+    expect(first).toBe(false);
+    // second call should be blocked
+    const second = await isRateLimited(key, 1, 60_000);
+    expect(second).toBe(true);
+  });
+
+  it('falls back to in-memory when redis init fails', async () => {
+    // Mock ioredis to throw on ping
+    class BrokenRedis {
+      constructor() {}
+      async ping() { throw new Error('no redis'); }
+    }
+
+    vi.resetModules();
+    process.env.REDIS_URL = 'redis://localhost:6379';
+    vi.mock('ioredis', () => ({ default: class { constructor() {} async ping() { throw new Error('no redis'); } } }));
+
+    const { initRateLimiter, isRateLimited } = await import('../lib/proxy-rate-limit');
+    await initRateLimiter();
+
+    const key = 'fallback-key';
+    // in-memory behavior: first call allowed
+    expect(await isRateLimited(key, 1, 60_000)).toBe(false);
+    // next call blocked
+    expect(await isRateLimited(key, 1, 60_000)).toBe(true);
+  });
+});
