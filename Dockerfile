@@ -1,9 +1,9 @@
-FROM node:18-bullseye-slim AS build
+FROM node:20-bullseye-slim AS build
 WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline --no-audit --no-fund --legacy-peer-deps
+RUN npm ci --prefer-offline --no-audit --no-fund
 
 # Copy source and build
 COPY . .
