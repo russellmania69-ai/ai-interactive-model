@@ -2,6 +2,49 @@ name: CI
 
 on:
   push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-build-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests with coverage
+        run: npx vitest run --coverage
+
+      - name: Check branch coverage threshold
+        run: |
+          node -e 'const fs=require("fs");const p="coverage/coverage-final.json";if(!fs.existsSync(p)){console.error("coverage file not found");process.exit(1);}const j=JSON.parse(fs.readFileSync(p,"utf8"));let totalB=0,totalBCov=0;for(const k in j){const b=j[k].b||{};for(const i in b){const arr=b[i]||[];totalB+=arr.length;totalBCov+=arr.filter(n=>n>0).length;}}const pct=(totalB? totalBCov/totalB*100:100);console.log("Branch coverage: "+pct.toFixed(2)+"%");if(pct<90){console.error("Branch coverage below threshold (90%)");process.exit(1);} '
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate || true
+
+      - name: Upload coverage artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+name: CI
+
+on:
+  push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
@@ -19,7 +62,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Lint
         run: npm run lint
       - name: Test and coverage
@@ -58,7 +101,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Build (ensure dist)
         run: npm run build
       - name: Install Playwright deps
