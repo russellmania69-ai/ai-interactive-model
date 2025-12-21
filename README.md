@@ -110,6 +110,21 @@ There's a Netlify Functions example at `netlify/functions/anthropic-proxy.ts` th
 
 Set `ANTHROPIC_API_KEY` and `PROXY_API_KEY` in Netlify site settings before deploying. The Netlify function uses the same Anthropic request pattern as the Vercel example.
 
+Express example
+---------------
+There's an Express example at `examples/express/anthropic-proxy-express.ts` intended for self-hosted deployments. Usage:
+
+1. Set environment variables: `ANTHROPIC_API_KEY`, `PROXY_API_KEY`, and optionally `DEFAULT_LLM` or `VITE_DEFAULT_LLM`.
+2. Start the example server (Node >=18 recommended):
+
+```bash
+node examples/express/anthropic-proxy-express.ts
+```
+
+3. Call `POST /proxy/anthropic` with header `x-api-key` and JSON body `{ "input": "..." }`.
+
+The example includes a basic in-memory rate limiter; for production use add a robust rate-limiting and auth mechanism.
+
 
 
 **Production readiness checklist**
