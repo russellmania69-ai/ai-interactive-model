@@ -4,7 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+const base = tseslint.config(
   { ignores: ["dist"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -25,21 +25,22 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-unused-vars": "off",
     },
-    // Allow `any` in example scripts, serverless functions, and coverage artifacts
-    // which are used for testing, samples, or generated reports.
-    overrides: [
-      {
-        files: [
-          "examples/**",
-          "netlify/**",
-          "api/**",
-          "scripts/**",
-          "coverage-artifact-**/**",
-        ],
-        rules: {
-          "@typescript-eslint/no-explicit-any": "off",
-        },
-      },
-    ],
   }
 );
+
+// Export a flat-config array: base config plus file-scoped overrides
+export default [
+  base,
+  {
+    files: [
+      "examples/**",
+      "netlify/**",
+      "api/**",
+      "scripts/**",
+      "coverage-artifact-**/**",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+];
