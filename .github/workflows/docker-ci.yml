@@ -81,6 +81,7 @@ jobs:
           docker push "$IMAGE_NAME:latest"
 
       - name: Create GitHub release
+        if: ${{ github.event_name == 'push' }}
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
