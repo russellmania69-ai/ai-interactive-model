@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 // Moved to examples/__tests__/anthropic-proxy-express.test.ts
 import { describe } from 'vitest'
 

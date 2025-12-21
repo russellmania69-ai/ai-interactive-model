@@ -1,0 +1,74 @@
+name: CI - Docker Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build:
+    name: Build and Publish Docker image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${PROXY_JWT_SECRET:-}" ] || [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "Missing required secrets: PROXY_JWT_SECRET and/or ANTHROPIC_API_KEY"
+            exit 1
+          fi
+        env:
+          PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image (load to local Docker)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ghcr.io/${{ github.repository }}/ai-interactive-model:build-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan built image with Trivy
+        uses: aquasecurity/trivy-action@v0.4.19
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/ai-interactive-model:build-${{ github.sha }}
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Push image to GHCR
+        run: |
+          docker tag ghcr.io/${{ github.repository }}/ai-interactive-model:build-${{ github.sha }} ghcr.io/${{ github.repository }}/ai-interactive-model:latest
+          docker push ghcr.io/${{ github.repository }}/ai-interactive-model:build-${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/ai-interactive-model:latest
+
+      - name: Notify Slack (optional)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            payload=$(jq -n --arg repo "${{ github.repository }}" --arg workflow "${{ github.workflow }}" --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" '{text: "Docker build workflow completed for " + $repo + " - " + $workflow + "\n<" + $url + "|View run>"}')
+            curl -s -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK_URL }}" || true
+          fi
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
