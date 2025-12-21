@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+[![codecov](https://codecov.io/gh/russellmania69-ai/ai-interactive-model/branch/main/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/russellmania69-ai/ai-interactive-model)
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Local development without Supabase
@@ -55,6 +57,74 @@ Notes:
 - The mock is intended for UI development only and should not be used in CI/production.
 - For full functionality (auth, DB, storage), configure real Supabase credentials and set `VITE_SUPABASE_URL`
 	and `VITE_SUPABASE_ANON_KEY` in `.env.local` or your deployment provider.
+
+LLM Provider (optional)
+-----------------------
+You can set a default LLM provider used by client builds via `VITE_DEFAULT_LLM`. To enable Claude Sonnet 4.5 for all clients, set:
+
+```
+VITE_DEFAULT_LLM=claude-sonnet-4.5
+```
+
+This project does not currently include a built-in Anthropic/Claude integration; setting this env var surfaces the default value to client code via `src/lib/llm.ts`. To fully enable Claude Sonnet 4.5 you will need to:
+
+- Add server-side credentials and/or an API proxy that performs Anthropic API calls (do not embed private keys in the browser).
+- Wire the provider in your backend or serverless functions to route requests to Anthropic using the chosen model name.
+
+If you want, I can open a PR that wires `DEFAULT_LLM` into specific request code or add a serverless proxy example.
+### Serverless proxy example (Vercel)
+
+We've added a minimal Vercel serverless function example at `api/anthropic-proxy.ts` that demonstrates a secure pattern for calling Anthropic/Claude from the server (clients call this endpoint, server holds the secret API key).
+
+Quick setup:
+
+1. Add your Anthropic API key to your deployment provider as `ANTHROPIC_API_KEY` (do NOT commit this key).
+2. (Optional) Set `VITE_DEFAULT_LLM=claude-sonnet-4.5` in build env or `DEFAULT_LLM=claude-sonnet-4.5` on the server.
+3. Deploy to Vercel (or adapt the code to your provider's serverless format). The function forwards the client's `input` and optional `model` to Anthropic and returns the API response.
+
+Client example (fetch from browser to your proxy):
+
+```js
+const resp = await fetch('/api/anthropic-proxy', {
+	method: 'POST',
+	headers: { 'Content-Type': 'application/json' },
+	body: JSON.stringify({ input: 'Write a short poem about winter.' })
+});
+const json = await resp.json();
+console.log(json);
+```
+
+Security notes:
+
+- Never embed `ANTHROPIC_API_KEY` or other private keys in client-side code. Use server-side secrets.
+- Adjust rate-limiting, authentication, and input sanitization in the proxy before using in production.
+
+If you want, I can also add a Netlify / Vercel function variant or a tiny Express server example and open a PR.
+
+Netlify function variant
+-----------------------
+There's a Netlify Functions example at `netlify/functions/anthropic-proxy.ts` that demonstrates a small proxy with:
+
+- `PROXY_API_KEY` check: clients must send `x-api-key` header matching this server secret.
+- In-memory rate limiting (per IP) controlled by `PROXY_RATE_LIMIT` and `PROXY_RATE_WINDOW_MS` env vars.
+
+Set `ANTHROPIC_API_KEY` and `PROXY_API_KEY` in Netlify site settings before deploying. The Netlify function uses the same Anthropic request pattern as the Vercel example.
+
+Express example
+---------------
+There's an Express example at `examples/express/anthropic-proxy-express.ts` intended for self-hosted deployments. Usage:
+
+1. Set environment variables: `ANTHROPIC_API_KEY`, `PROXY_API_KEY`, and optionally `DEFAULT_LLM` or `VITE_DEFAULT_LLM`.
+2. Start the example server (Node >=18 recommended):
+
+```bash
+node examples/express/anthropic-proxy-express.ts
+```
+
+3. Call `POST /proxy/anthropic` with header `x-api-key` and JSON body `{ "input": "..." }`.
+
+The example includes a basic in-memory rate limiter; for production use add a robust rate-limiting and auth mechanism.
+
 
 
 **Production readiness checklist**

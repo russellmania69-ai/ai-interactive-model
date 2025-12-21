@@ -4,5 +4,6 @@ const BASE = process.env.E2E_BASE_URL ?? 'https://russellmania69-ai.github.io/ai
 
 test('homepage loads and has correct title', async ({ page }) => {
   await page.goto(BASE)
-  await expect(page).toHaveTitle(/AI Interactive Model/)
+  // Accept either the development title or the production title
+  await expect(page).toHaveTitle(/AI Interactive Model|AI Models - Premium AI Companion Platform/)
 })

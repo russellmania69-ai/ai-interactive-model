@@ -21,11 +21,21 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id: string) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) return 'react-vendor';
-            if (id.includes('@supabase') || id.includes('supabase')) return 'supabase-vendor';
-            return 'vendor';
-          }
+          if (!id.includes('node_modules')) return;
+
+          // Keep React in its own chunk
+          if (id.includes('react') || id.includes('react-dom')) return 'react-vendor';
+
+          // Supabase in a separate chunk
+          if (id.includes('@supabase') || id.includes('supabase')) return 'supabase-vendor';
+
+          // Split a few large libraries into their own chunks to reduce the main vendor size
+          if (id.includes('recharts')) return 'recharts-vendor';
+          if (id.includes('lucide-react')) return 'icons-vendor';
+          if (id.includes('@sentry')) return 'sentry-vendor';
+
+          // Fallback vendor chunk
+          return 'vendor';
         }
       }
     },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Play, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -21,12 +21,8 @@ export function VideoGallery({ modelId, onPlayVideo }: VideoGalleryProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    loadVideos();
-  }, [modelId]);
-
-  const loadVideos = async () => {
+   
+  const loadVideos = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('model_videos')
@@ -41,7 +37,11 @@ export function VideoGallery({ modelId, onPlayVideo }: VideoGalleryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [modelId]);
+
+  useEffect(() => {
+    loadVideos();
+  }, [loadVideos]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
