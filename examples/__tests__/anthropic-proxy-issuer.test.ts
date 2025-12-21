@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import proxyApp from '../express/anthropic-proxy-express';
 import issuerApp from '../express/jwt-issuer-express';

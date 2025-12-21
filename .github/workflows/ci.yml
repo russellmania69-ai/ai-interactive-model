@@ -2,6 +2,63 @@ name: CI
 
 on:
   push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  ci:
+    name: Tests, Lint, Build, E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${PROXY_JWT_SECRET:-}" ] || [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "Missing required secrets: PROXY_JWT_SECRET and/or ANTHROPIC_API_KEY"
+            exit 1
+          fi
+        env:
+          PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test --silent
+
+      - name: Run lint
+        run: npm run lint --silent
+
+      - name: Build (production)
+        run: npm run build --silent
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: npm run e2e --silent
+
+      - name: Notify Slack (optional)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            payload=$(jq -n --arg repo "${{ github.repository }}" --arg workflow "${{ github.workflow }}" --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" '{text: "CI workflow completed for " + $repo + " - " + $workflow + "\n<" + $url + "|View run>"}')
+            curl -s -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK_URL }}" || true
+          fi
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+name: CI
+
+on:
+  push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
