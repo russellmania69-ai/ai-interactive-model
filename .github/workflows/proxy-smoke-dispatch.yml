@@ -1,0 +1,46 @@
+name: Proxy smoke tests (manual)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    name: Run Express issuer + proxy smoke tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Redis service (for Redis-backed rate limiter)
+        if: always()
+        run: echo "Starting Redis service available at redis://localhost:6379"
+      services:
+        redis:
+          image: redis:7
+          ports:
+            - 6379:6379
+
+      - name: Fail early if required secrets are missing
+        run: |
+          if [ -z "${{ secrets.PROXY_JWT_SECRET }}" ] || [ -z "${{ secrets.PROXY_ISSUER_ADMIN_KEY }}" ] || [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "Required secrets PROXY_JWT_SECRET, PROXY_ISSUER_ADMIN_KEY or ANTHROPIC_API_KEY are missing in repo secrets." >&2
+            exit 1
+          fi
+
+      - name: Run unit tests (fast)
+        env:
+          PROXY_JWT_SECRET: ${{ secrets.PROXY_JWT_SECRET }}
+          PROXY_ISSUER_ADMIN_KEY: ${{ secrets.PROXY_ISSUER_ADMIN_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REDIS_URL: redis://localhost:6379
+        run: npx vitest run --run
+
+      - name: Show coverage summary
+        run: npx vitest run --coverage --run || true
