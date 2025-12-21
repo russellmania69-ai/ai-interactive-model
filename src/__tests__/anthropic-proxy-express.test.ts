@@ -7,6 +7,9 @@ let server: any;
 beforeEach(() => {
   process.env.PROXY_API_KEY = 'test-proxy-key';
   process.env.ANTHROPIC_API_KEY = 'sk-test-anthropic';
+  process.env.PROXY_JWT_SECRET = 'test-jwt-secret';
+  process.env.PROXY_RATE_LIMIT = '2';
+  process.env.PROXY_RATE_WINDOW_MS = '1000';
 });
 
 afterEach(async () => {
@@ -24,18 +27,38 @@ describe('Express Anthropic proxy (integration)', () => {
       status: 200,
       json: async () => ({ completion: 'fake-response' })
     });
+    // generate a JWT for the proxy auth
+    const jwt = await import('jsonwebtoken');
+    const token = jwt.sign({ sub: 'test-client' }, process.env.PROXY_JWT_SECRET as string, { expiresIn: '1h' });
 
     server = app.listen(0);
     const port = (server.address() as any).port;
 
-    const resp = await (globalThis as any).fetch(`http://127.0.0.1:${port}/proxy/anthropic`, {
+    // first request should pass
+    const resp1 = await originalFetch(`http://127.0.0.1:${port}/proxy/anthropic`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': 'test-proxy-key' },
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
       body: JSON.stringify({ input: 'Hello' })
     });
-    const body = await resp.json();
-    expect(resp.status).toBe(200);
-    expect(body).toHaveProperty('completion', 'fake-response');
+    const body1 = await resp1.json();
+    expect(resp1.status).toBe(200);
+    expect(body1).toHaveProperty('completion', 'fake-response');
+
+    // second request should pass (limit=2)
+    const resp2 = await originalFetch(`http://127.0.0.1:${port}/proxy/anthropic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ input: 'Hello' })
+    });
+    expect(resp2.status).toBe(200);
+
+    // third immediate request should be rate-limited
+    const resp3 = await originalFetch(`http://127.0.0.1:${port}/proxy/anthropic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ input: 'Hello' })
+    });
+    expect(resp3.status).toBe(429);
 
     (globalThis as any).fetch = originalFetch;
   });
