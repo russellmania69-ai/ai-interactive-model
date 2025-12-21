@@ -24,22 +24,22 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
-      // Allow `any` in example scripts, serverless functions, and coverage artifacts
-      // which are used for testing, samples, or generated reports.
-      overrides: [
-        {
-          files: [
-            "examples/**",
-            "netlify/**",
-            "api/**",
-            "scripts/**",
-            "coverage-artifact-**/**",
-          ],
-          rules: {
-            "@typescript-eslint/no-explicit-any": "off",
-          },
-        },
-      ],
     },
+    // Allow `any` in example scripts, serverless functions, and coverage artifacts
+    // which are used for testing, samples, or generated reports.
+    overrides: [
+      {
+        files: [
+          "examples/**",
+          "netlify/**",
+          "api/**",
+          "scripts/**",
+          "coverage-artifact-**/**",
+        ],
+        rules: {
+          "@typescript-eslint/no-explicit-any": "off",
+        },
+      },
+    ],
   }
 );
