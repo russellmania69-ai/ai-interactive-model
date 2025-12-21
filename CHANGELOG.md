@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+- 2025-12-21: Add optional JWKS support and documentation note
+  - Add `verifyWithJWKS` helper (dynamic `jose` import) in `src/lib/jwks.ts`
+  - Update Netlify proxy to optionally verify tokens via `PROXY_JWKS_URL`
+  - Add install note to `docs/PROXY.md` recommending `npm install jose` when using JWKS
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 ## [v0.1.0] - 2025-12-21
 - Added seeded Supabase mock for local development (`VITE_USE_SUPABASE_MOCK=seed`).
   - `src/lib/supabase-mock.ts` now supports seeded in-memory tables for `user_profiles`, `subscriptions`, `chat_sessions`, and `saved_images`.
