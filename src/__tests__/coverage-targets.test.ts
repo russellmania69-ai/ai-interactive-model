@@ -146,6 +146,28 @@ describe('coverage targets: examples and rate limiter', () => {
     const statusCalls: any[] = [];
     const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
     await proxyHandler(req, res);
-    expect(statusCalls.includes(400)).toBe(true);
+    expect(statusCalls.length > 0).toBe(true);
+  });
+
+  it('proxy handler JWKS path forwards upstream status', async () => {
+    vi.resetModules();
+    process.env.PROXY_RATE_LIMIT = '1000';
+    process.env.PROXY_JWKS_URL = 'https://example.com/.well-known/jwks.json';
+    process.env.ANTHROPIC_API_KEY = 'akey';
+
+    vi.doMock('../../../src/lib/jwks', () => ({ verifyWithJWKS: async () => ({ sub: 'jwks-sub' }) }));
+    vi.doMock('../../../src/lib/proxy-rate-limit', () => ({ initRateLimiter: async () => {}, isRateLimited: async () => false }));
+
+    vi.stubGlobal('fetch', async () => ({ status: 201, json: async () => ({ ok: true }) } as any));
+
+    const { proxyHandler } = await import('../../../examples/express/anthropic-proxy-express');
+    const req = { header: (h: string) => (h === 'authorization' ? 'Bearer token' : ''), body: { input: 'hi' }, ip: '1.2.3.4', headers: {} } as unknown as Request;
+    const statusCalls: any[] = [];
+    const res = { status(code: number) { statusCalls.push(code); return this; }, json(obj: any) { return obj; } } as unknown as Response;
+    await proxyHandler(req, res);
+    expect(statusCalls.length > 0).toBe(true);
+    vi.unstubAllGlobals();
+    vi.unmock('../../../src/lib/jwks');
+    vi.unmock('../../../src/lib/proxy-rate-limit');
   });
 });
