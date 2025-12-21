@@ -21,11 +21,13 @@ if (import.meta.env.PROD) {
     );
   }
 } else {
-  // Dev fallback (kept as before for local developer experience)
-  supabaseUrl = supabaseUrl || 'https://wnytflqoxaxglgetafqn.supabase.co';
-  supabaseKey =
-    supabaseKey ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndueXRmbHFveGF4Z2xnZXRhZnFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NzA1MzEsImV4cCI6MjA3NzU0NjUzMX0.N41ZCmRGaC_MMohjThDrHgjKqAHz7Bmivwmr9DW2NwE';
+  // Development: do not embed real project secrets in the repo. If env vars are
+  // missing, print a warning and allow local dev to proceed with no Supabase
+  // client configured. Developers should add `.env.local` with their own
+  // `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` values.
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('VITE_SUPABASE_URL or VITE_SUPABASE_KEY not set. Supabase client will be disabled in dev.');
+  }
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);

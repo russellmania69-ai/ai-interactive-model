@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
@@ -35,17 +35,8 @@ export function ChatInterface({ sessionId, modelName, modelImage, onBack }: Chat
 
 
   // include sessionId only; these functions are stable for this component
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    loadMessages();
-    subscribeToMessages();
-  }, [sessionId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  const loadMessages = async () => {
+   
+  const loadMessages = useCallback(async () => {
     const { data } = await supabase
       .from('chat_messages')
       .select('*')
@@ -53,9 +44,9 @@ export function ChatInterface({ sessionId, modelName, modelImage, onBack }: Chat
       .order('created_at', { ascending: true });
     
     if (data) setMessages(data);
-  };
+  }, [sessionId]);
 
-  const subscribeToMessages = () => {
+  const subscribeToMessages = useCallback(() => {
     const channel = supabase
       .channel(`chat:${sessionId}`)
       .on('postgres_changes', 
@@ -67,7 +58,19 @@ export function ChatInterface({ sessionId, modelName, modelImage, onBack }: Chat
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    loadMessages();
+    const cleanup = subscribeToMessages();
+    return cleanup;
+  }, [loadMessages, subscribeToMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -125,8 +128,8 @@ export function ChatInterface({ sessionId, modelName, modelImage, onBack }: Chat
           modelName, 
           chatHistory: messages.slice(-10),
           sessionId: sessionId,
-          supabaseUrl: import.meta.env.VITE_SUPABASE_URL || 'https://wnytflqoxaxglgetafqn.supabase.co',
-          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndueXRmbHFveGF4Z2xnZXRhZnFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA0NDU0OTksImV4cCI6MjA0NjAyMTQ5OX0.eiYCLqmEyVdBXVPxmfLOCxHUKfKxTBBpTxJQbGiWzFg'
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY
         }
       });
 

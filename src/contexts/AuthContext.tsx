@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseEnabled } from '@/lib/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -25,12 +26,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
+    const hasAuthSupport = !!supabaseEnabled;
+
+    if (!hasAuthSupport) {
+      // Supabase not configured — skip auth initialization to allow the app to run in dev without keys.
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     // Fetch session with timeout
     const sessionPromise = Promise.race([
-      supabase.auth.getSession(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
-      )
+      (supabase as unknown as SupabaseClient).auth.getSession(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Session fetch timeout')), 5000))
     ]);
 
     sessionPromise
@@ -52,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Subscribe to auth changes
     try {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = (supabase as unknown as SupabaseClient).auth.onAuthStateChange((_event: string, session: Session | null) => {
         if (isMounted) {
           setSession(session);
           setUser(session?.user ?? null);
