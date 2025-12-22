@@ -12,7 +12,8 @@ RUN npm ci --prefer-offline --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM nginx:stable AS runtime
+# Use the slim runtime image to reduce footprint and get newer package variants
+FROM nginx:stable-slim AS runtime
 # Refresh OS packages in the runtime image to reduce reported CVEs
 RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/dist /usr/share/nginx/html
