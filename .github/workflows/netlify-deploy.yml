@@ -28,18 +28,17 @@ jobs:
             exit 1
           fi
 
-      - name: Validate Netlify token & site
+      - name: Validate Netlify token & site (API check)
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
-          # Confirm the token can access the site and fail with clearer message
-          # use positional site id (some netlify-cli versions do not accept --site)
-          npx netlify-cli sites:info "$NETLIFY_SITE_ID" || {
-            echo "NETLIFY token or site ID invalid or unauthorized. Confirm token belongs to the site owner/team." >&2
-            npx netlify-cli teams:list || true
+          # Use Netlify API to validate token + site id to avoid netlify-cli version differences
+          resp=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID" ) || true
+          if [ "$resp" != "200" ]; then
+            echo "NETLIFY token or site ID invalid or unauthorized (HTTP $resp)." >&2
             exit 1
-          }
+          fi
 
       - name: Deploy to Netlify (non-interactive)
         env:
