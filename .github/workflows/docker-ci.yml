@@ -86,8 +86,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
-          release_name: Release ${{ github.sha }}
+          # Prefix the tag to avoid GitHub pre-receive rules that reject 40-hex-only names
+          tag_name: ci-${{ github.sha }}
+          release_name: Release ci-${{ github.sha }}
           body: |
             Docker image built and pushed:
             - ghcr.io/${{ github.repository_owner }}/ai-interactive-model:${{ github.sha }}
