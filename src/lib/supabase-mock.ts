@@ -68,16 +68,24 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
   try {
     const g = globalThis as unknown as { __SEED_DATA?: unknown };
     if (options?.seeded && !g.__SEED_DATA && typeof fetch === 'function') {
-      void fetch('/seed-data.json')
-        .then((r) => r.ok ? r.json() : null)
-        .then((data) => {
-          if (data && typeof data === 'object') {
-            seededData = { ...(seededData || {}), ...(data as Record<string, Record<string, unknown>[]>) };
-          }
-        })
-        .catch(() => {
-          // ignore fetch errors
-        });
+      // Attempt a direct fetch of the seeded JSON file and merge results.
+      // Use the global `fetch` here to avoid dynamic-import overhead which
+      // can introduce timing delays in tests; network errors are ignored.
+      try {
+        fetch('/seed-data.json')
+          .then((r: Response | null) => (r && (r as Response).ok) ? (r as Response).json() : null)
+          .then((data) => {
+            if (data && typeof data === 'object') {
+              // Merge per-table data; fetched keys override or add to existing tables
+              seededData = { ...(seededData || {}), ...(data as Record<string, Record<string, unknown>[]>) };
+            }
+          })
+          .catch(() => {
+            // ignore fetch errors
+          });
+      } catch {
+        // ignore
+      }
     }
   } catch {
     // ignore

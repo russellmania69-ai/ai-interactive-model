@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Download, Share2, Image as ImageIcon, Sparkles, History, CheckSquare, Square, Trash2, Archive } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import fetchWithRetry from '@/lib/fetch-with-retry';
 import { RegenerateImageModal } from './RegenerateImageModal';
 
 interface GalleryImage {
@@ -128,7 +129,7 @@ export function ImageGallery({ sessionId, onClose }: ImageGalleryProps) {
 
   const handleDownload = async (image: GalleryImage) => {
     try {
-      const response = await fetch(image.image_url);
+      const response = await fetchWithRetry(image.image_url, { timeoutMs: 10000, retries: 1 });
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
