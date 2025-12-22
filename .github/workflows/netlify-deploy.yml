@@ -34,7 +34,8 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           # Confirm the token can access the site and fail with clearer message
-          npx netlify-cli sites:info --site "$NETLIFY_SITE_ID" || {
+          # use positional site id (some netlify-cli versions do not accept --site)
+          npx netlify-cli sites:info "$NETLIFY_SITE_ID" || {
             echo "NETLIFY token or site ID invalid or unauthorized. Confirm token belongs to the site owner/team." >&2
             npx netlify-cli teams:list || true
             exit 1
