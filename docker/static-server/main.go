@@ -24,16 +24,28 @@ func main() {
     }
 
     fs := http.FileServer(http.Dir(*root))
-    handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fileHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("X-Content-Type-Options", "nosniff")
         w.Header().Set("X-Frame-Options", "DENY")
         w.Header().Set("Referrer-Policy", "no-referrer")
         fs.ServeHTTP(w, r)
     })
 
+    mux := http.NewServeMux()
+    // Health endpoint used by CI
+    mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+        if r.Method != http.MethodGet {
+            http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+            return
+        }
+        w.WriteHeader(http.StatusOK)
+        _, _ = w.Write([]byte("OK"))
+    })
+    mux.Handle("/", fileHandler)
+
     addr := ":" + *port
     log.Printf("serving %s on http://%s\n", *root, addr)
-    if err := http.ListenAndServe(addr, handler); err != nil {
+    if err := http.ListenAndServe(addr, mux); err != nil {
         log.Fatal(err)
     }
 }
