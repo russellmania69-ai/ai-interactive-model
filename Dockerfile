@@ -25,7 +25,7 @@ WORKDIR /app
 COPY --from=build /app/dist /app/dist
 COPY --from=server-builder /static-server /static-server
 
-EXPOSE 8080
+EXPOSE 80
 USER nonroot
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/static-server","-root","/app/dist","-health-check"]
-CMD ["/static-server", "-root", "/app/dist", "-port", "8080"]
+CMD ["/static-server", "-root", "/app/dist", "-port", "80"]
