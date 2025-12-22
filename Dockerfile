@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # Use the slim runtime image to reduce footprint and get newer package variants
-FROM golang:1.21-alpine AS server-builder
+FROM golang:1.24-alpine AS server-builder
 RUN apk add --no-cache build-base git
 WORKDIR /server
 COPY docker/static-server/main.go ./
