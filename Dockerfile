@@ -1,6 +1,9 @@
 FROM node:20-bullseye-slim AS build
 WORKDIR /app
 
+# Refresh OS packages to pull security updates in the build image
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
 COPY package.json package-lock.json* ./
 RUN npm ci --prefer-offline --no-audit --no-fund
@@ -10,6 +13,8 @@ COPY . .
 RUN npm run build
 
 FROM nginx:stable AS runtime
+# Refresh OS packages in the runtime image to reduce reported CVEs
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
