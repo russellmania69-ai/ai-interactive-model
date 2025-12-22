@@ -15,6 +15,8 @@ RUN npm run build
 # Use the slim runtime image to reduce footprint and get newer package variants
 FROM nginx:1.26.3-alpine AS runtime
 # Alpine-based runtime is smaller and avoids many Debian CVEs reported by scanners
+# Refresh Alpine packages to pick up security fixes in the runtime image
+RUN apk update && apk upgrade --no-cache
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
