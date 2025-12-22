@@ -13,16 +13,19 @@ COPY . .
 RUN npm run build
 
 # Use the slim runtime image to reduce footprint and get newer package variants
-FROM nginx:1.26.3-alpine AS runtime
-# Alpine-based runtime is smaller and avoids many Debian CVEs reported by scanners
-# Refresh Alpine packages to pick up security fixes in the runtime image
-RUN apk update && apk upgrade --no-cache
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM golang:1.21-alpine AS server-builder
+RUN apk add --no-cache build-base git
+WORKDIR /server
+COPY docker/static-server/main.go ./
+ENV CGO_ENABLED=0
+RUN go build -ldflags='-s -w' -o /static-server ./main.go
 
-# Basic lightweight healthcheck: ensure the built index exists
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD ["/bin/sh", "-c", "[ -s /usr/share/nginx/html/index.html ] || exit 1"]
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /app
+COPY --from=build /app/dist /app/dist
+COPY --from=server-builder /static-server /static-server
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080
+USER nonroot
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/static-server","-root","/app/dist","-health-check"]
+CMD ["/static-server", "-root", "/app/dist", "-port", "8080"]
