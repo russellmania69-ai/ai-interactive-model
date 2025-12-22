@@ -1,0 +1,117 @@
+name: Build & Test Docker Image
+
+permissions:
+  contents: read
+  packages: write
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm ci
+
+      - name: Run tests
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm test
+
+      - name: Run npm audit (fail on moderate+)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm audit --audit-level=moderate || (echo "Vulnerabilities found at or above 'moderate'" && exit 1)
+
+      - name: Build application
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: docker build -t ai-interactive-model:ci .
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag and push image to GHCR
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/ai-interactive-model
+        run: |
+          docker tag ai-interactive-model:ci "$IMAGE_NAME:${{ github.sha }}"
+          docker push "$IMAGE_NAME:${{ github.sha }}"
+          # also push latest tag for convenience
+          docker tag ai-interactive-model:ci "$IMAGE_NAME:latest"
+          docker push "$IMAGE_NAME:latest"
+
+      - name: Create GitHub release
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.sha }}
+          release_name: Release ${{ github.sha }}
+          body: |
+            Docker image built and pushed:
+            - ghcr.io/${{ github.repository_owner }}/ai-interactive-model:${{ github.sha }}
+            - ghcr.io/${{ github.repository_owner }}/ai-interactive-model:latest
+          draft: false
+          prerelease: false
+
+      - name: Run container and verify /health
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: |
+          # Pass Sentry DSNs into the container at runtime (do not bake them into image)
+          docker run -d --name ai-ci -p 8080:80 -e SENTRY_DSN="$SENTRY_DSN" -e VITE_SENTRY_DSN="$VITE_SENTRY_DSN" ai-interactive-model:ci
+          for i in $(seq 1 20); do
+            if curl -sSf http://localhost:8080/health; then
+              echo "health OK" && exit 0
+            fi
+            sleep 1
+          done
+          docker logs ai-ci || true
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f ai-ci || true

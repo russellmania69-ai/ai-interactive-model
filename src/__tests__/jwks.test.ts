@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('jose', () => {
-  const jwtVerify = vi.fn(async (token: string, jwks: unknown, opts: any) => {
-    return { payload: { sub: 'test-sub', iss: 'test-iss', algorithms: opts?.algorithms } }
+  const jwtVerify = vi.fn(async (token: string, jwks: unknown, _opts?: Record<string, unknown>) => {
+    return { payload: { sub: 'test-sub', iss: 'test-iss' } }
   })
   const createRemoteJWKSet = (url: URL) => ({ url })
   return { createRemoteJWKSet, jwtVerify }
