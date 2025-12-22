@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # Use the slim runtime image to reduce footprint and get newer package variants
-FROM nginx:stable-slim AS runtime
+FROM nginx:1.26.3-slim AS runtime
 # Refresh OS packages in the runtime image to reduce reported CVEs
 RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/dist /usr/share/nginx/html
