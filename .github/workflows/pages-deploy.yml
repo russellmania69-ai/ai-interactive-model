@@ -36,7 +36,7 @@ jobs:
           echo "dist listing:" && ls -la ./dist || true
           echo "index.html preview:" && sed -n '1,30p' ./dist/index.html || true
       - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v2
         with:
           path: ./dist
 
