@@ -35,18 +35,10 @@ jobs:
         run: |
           echo "dist listing:" && ls -la ./dist || true
           echo "index.html preview:" && sed -n '1,30p' ./dist/index.html || true
-      - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: ./dist
-
-  deploy:
-    needs: build-and-deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to gh-pages branch
+      - name: Publish to gh-pages via peaceiris
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           publish_branch: gh-pages
+
