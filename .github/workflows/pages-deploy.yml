@@ -25,6 +25,12 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Add health.json to build output
+        run: |
+          mkdir -p ./dist
+          cat > ./dist/health.json << 'EOF'
+          {"status":"ok"}
+          EOF
       - name: Verify build output
         run: |
           echo "dist listing:" && ls -la ./dist || true
