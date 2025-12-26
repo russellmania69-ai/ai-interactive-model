@@ -21,7 +21,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: Require Netlify secrets on main
+      - if: github.ref == 'refs/heads/main'
+        name: Require Netlify secrets on main
         run: |
           if [ -z "${{ secrets.NETLIFY_AUTH_TOKEN }}" ] || [ -z "${{ secrets.NETLIFY_SITE_ID }}" ]; then
             echo "NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID not set — failing on main to prevent accidental deploy." >&2
