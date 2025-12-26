@@ -13,8 +13,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install supabase CLI
+        env:
+          SUPABASE_CLI_VERSION: v1.66.3
         run: |
-          curl -L "https://github.com/supabase/cli/releases/latest/download/supabase_$(uname -s)_$(uname -m).tar.gz" -sSfL | tar xz -C /usr/local/bin supabase
+          set -euo pipefail
+          # Try a pinned release asset first; if that path 404s, fall back to npm global install.
+          URL="https://github.com/supabase/cli/releases/download/${SUPABASE_CLI_VERSION}/supabase_$(uname -s)_$(uname -m).tar.gz"
+          echo "Attempting to download Supabase CLI from: $URL"
+          if curl --head --silent --fail "$URL" >/dev/null; then
+            curl -L "$URL" | tar xz -C /usr/local/bin supabase
+          else
+            echo "Release asset not available, installing supabase via npm as fallback"
+            npm install -g supabase
+          fi
 
       - name: Authenticate Supabase CLI
         env:
