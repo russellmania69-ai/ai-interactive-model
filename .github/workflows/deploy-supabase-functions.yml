@@ -17,15 +17,18 @@ jobs:
           SUPABASE_CLI_VERSION: v1.66.3
         run: |
           set -euo pipefail
-          # Try a pinned release asset first; if that path 404s, fall back to npm global install.
-          URL="https://github.com/supabase/cli/releases/download/${SUPABASE_CLI_VERSION}/supabase_$(uname -s)_$(uname -m).tar.gz"
-          echo "Attempting to download Supabase CLI from: $URL"
-          if curl --head --silent --fail "$URL" >/dev/null; then
-            curl -L "$URL" | tar xz -C /usr/local/bin supabase
-          else
-            echo "Release asset not available, installing supabase via npm as fallback"
-            npm install -g supabase
+          echo "Attempting pinned release (if available) then falling back to official installer"
+          if [ -n "${SUPABASE_CLI_VERSION:-}" ]; then
+            TARURL="https://github.com/supabase/cli/releases/download/${SUPABASE_CLI_VERSION}/supabase_$(uname -s)_$(uname -m).tar.gz"
+            echo "Trying release asset: $TARURL"
+            if curl --head --silent --fail "$TARURL" >/dev/null 2>&1; then
+              curl -L "$TARURL" | tar xz -C /usr/local/bin supabase || true
+            else
+              echo "Pinned release asset not found; continuing to official installer"
+            fi
           fi
+          echo "Installing Supabase CLI using official installer"
+          curl -sL https://cli.supabase.com/install | sh
 
       - name: Authenticate Supabase CLI
         env:
