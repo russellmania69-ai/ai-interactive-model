@@ -14,6 +14,11 @@ let supabase: SupabaseClient | unknown;
 
 export const supabaseEnabled = !!(supabaseUrl && supabaseKey);
 
+// Export the raw env values too so callers can read the underlying URL/key
+// even when `supabase` is a mock without those properties.
+export const supabaseUrlValue = supabaseUrl ?? '';
+export const supabaseKeyValue = supabaseKey ?? '';
+
 if (!supabaseUrl || !supabaseKey) {
 	console.warn('Missing Supabase env vars: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 

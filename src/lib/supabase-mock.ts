@@ -160,10 +160,26 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
     }
   };
 
+  // Minimal stubs to mirror surface of real Supabase client used by the app.
+  const removeChannel = (_c: unknown) => { /* no-op for mock */ };
+  const channel = (_name: string) => ({
+    subscribe: () => ({ unsubscribe: () => {} }),
+    on: () => ({})
+  });
+
+  const rpc = async (_fn: string, _args?: unknown) => ({ data: null, error: null });
+
   return {
     auth,
     from: (table: string) => createFrom(table),
     storage,
-    functions
+    functions,
+    // Expose the raw env-like values so consumers that read `supabase.supabaseUrl`
+    // or `supabase.supabaseKey` don't get undefined in DEV when using the mock.
+    supabaseUrl: '',
+    supabaseKey: '',
+    removeChannel,
+    channel,
+    rpc
   } as unknown;
 }
