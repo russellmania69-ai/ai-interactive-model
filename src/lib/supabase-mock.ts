@@ -34,7 +34,7 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
           { id: 'user_2', email: 'bob@example.com', full_name: 'Bob', role: 'admin', avatar_url: '', created_at: new Date().toISOString() }
         ],
         subscriptions: [
-          { id: 'sub_1', user_email: 'alice@example.com', model_name: 'Luna', subscription_price: '9.99', payment_status: 'completed', subscription_start_date: new Date().toISOString(), subscription_end_date: new Date(Date.now() + 2592e6).toISOString() }
+          { id: 'sub_1', user_email: 'alice@example.com', model_name: 'Luna', subscription_price: '17.99', payment_status: 'completed', subscription_start_date: new Date().toISOString(), subscription_end_date: new Date(Date.now() + 2592e6).toISOString() }
         ],
         chat_sessions: [
           { id: 'chat_1', user_email: 'alice@example.com', model_name: 'Luna', created_at: new Date().toISOString() }

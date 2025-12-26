@@ -10,7 +10,7 @@ export const models3: AIModel[] = [
     ethnicity: 'Pacific Islander',
     rating: 4.7,
     subscribers: 11793,
-    subscriptionPrice: 13.49,
+    subscriptionPrice: 17.99,
     isOnline: true,
     bio: 'AI model with island-inspired content',
     interests: ['Beach', 'Lifestyle', 'Fitness'],
