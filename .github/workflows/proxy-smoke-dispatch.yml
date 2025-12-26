@@ -3,6 +3,8 @@ name: Proxy smoke tests (manual)
 on:
   workflow_dispatch: {}
 
+# Nudge: small no-op change to ensure workflow is published for manual dispatch (2025-12-26)
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
