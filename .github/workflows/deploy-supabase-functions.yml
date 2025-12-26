@@ -12,6 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Login to GHCR (if token provided)
+        if: ${{ secrets.GHCR_TOKEN != '' }}
+        run: |
+          echo "Logging in to ghcr.io"
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
       - name: Deploy Supabase functions using Dockerized CLI
         env:
           SUPABASE_CLI_IMAGE: ghcr.io/supabase/cli:latest
