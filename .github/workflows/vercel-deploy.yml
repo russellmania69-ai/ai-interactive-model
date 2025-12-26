@@ -30,7 +30,8 @@ jobs:
           npm i -g vercel
           vercel --prod --token "$VERCEL_TOKEN" --confirm --org "$VERCEL_ORG_ID" --scope "$VERCEL_PROJECT_ID"
 
-      - if: ${{ secrets.VERCEL_TOKEN == '' }}
-        name: Skip Vercel deploy (no token)
+      - if: github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN == ''
+        name: Require Vercel token on main
         run: |
-          echo "VERCEL_TOKEN not set — skipping Vercel deploy step."
+          echo "VERCEL_TOKEN not set — failing on main to prevent accidental deploy." >&2
+          exit 1
