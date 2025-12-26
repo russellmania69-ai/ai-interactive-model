@@ -12,53 +12,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install supabase CLI
+      - name: Deploy Supabase functions using Dockerized CLI
         env:
-          SUPABASE_CLI_VERSION: v1.66.3
-        run: |
-          set -euo pipefail
-          echo "Attempting pinned release (if available) then falling back to official installer"
-          if [ -n "${SUPABASE_CLI_VERSION:-}" ]; then
-            TARURL="https://github.com/supabase/cli/releases/download/${SUPABASE_CLI_VERSION}/supabase_$(uname -s)_$(uname -m).tar.gz"
-            echo "Trying release asset: $TARURL"
-            if curl --head --silent --fail "$TARURL" >/dev/null 2>&1; then
-              curl -L "$TARURL" | tar xz -C /usr/local/bin supabase || true
-            else
-              echo "Pinned release asset not found; continuing to official installer"
-            fi
-          fi
-          echo "Installing Supabase CLI using official installer"
-          curl -sL https://cli.supabase.com/install | sh
-
-      - name: Authenticate Supabase CLI
-        env:
+          SUPABASE_CLI_IMAGE: ghcr.io/supabase/cli:latest
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          supabase login --access-token "$SUPABASE_ACCESS_TOKEN"
-
-      - name: Set Stripe secret for functions
-        env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
         run: |
-          # Set the Stripe secret in the project (will store as a secret digest)
-          supabase secrets set STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" --project-ref "$SUPABASE_PROJECT_REF"
+          set -euo pipefail
+          IMAGE="$SUPABASE_CLI_IMAGE"
+          WORKDIR="${{ github.workspace }}"
 
-      - name: Deploy create-stripe-checkout function
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        run: |
-          supabase functions deploy create-stripe-checkout --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          echo "Setting Stripe secret (docker image: $IMAGE)"
+          docker run --rm -v "$WORKDIR":/work -w /work \
+            -e SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN" \
+            -e SUPABASE_PROJECT_REF="$SUPABASE_PROJECT_REF" \
+            -e STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
+            $IMAGE supabase secrets set STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" --project-ref "$SUPABASE_PROJECT_REF"
 
-      - name: Deploy verify-stripe-session function
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        run: |
-          supabase functions deploy verify-stripe-session --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          echo "Deploying create-stripe-checkout function"
+          docker run --rm -v "$WORKDIR":/work -w /work \
+            -e SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN" \
+            -e SUPABASE_PROJECT_REF="$SUPABASE_PROJECT_REF" \
+            $IMAGE supabase functions deploy create-stripe-checkout --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
-      - name: Post-deploy check
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        run: |
-          echo "Listing deployed functions:"
-          supabase functions list --project-ref "$SUPABASE_PROJECT_REF" || true
+          echo "Deploying verify-stripe-session function"
+          docker run --rm -v "$WORKDIR":/work -w /work \
+            -e SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN" \
+            -e SUPABASE_PROJECT_REF="$SUPABASE_PROJECT_REF" \
+            $IMAGE supabase functions deploy verify-stripe-session --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
+          echo "Listing deployed functions"
+          docker run --rm -v "$WORKDIR":/work -w /work \
+            -e SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN" \
+            -e SUPABASE_PROJECT_REF="$SUPABASE_PROJECT_REF" \
+            $IMAGE supabase functions list --project-ref "$SUPABASE_PROJECT_REF" || true
