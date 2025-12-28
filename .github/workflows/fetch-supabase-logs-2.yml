@@ -20,7 +20,7 @@ jobs:
       - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Fetch functions list
         env:
@@ -36,7 +36,7 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
         run: |
           echo "---- logs: create-stripe-checkout ----"
-          npx --yes supabase@latest functions logs create-stripe-checkout --since 24h || true
+          npx --yes supabase@latest functions logs create-stripe-checkout || true
 
       - name: Fetch logs for verify-stripe-session
         env:
@@ -44,7 +44,7 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
         run: |
           echo "---- logs: verify-stripe-session ----"
-          npx --yes supabase@latest functions logs verify-stripe-session --since 24h || true
+          npx --yes supabase@latest functions logs verify-stripe-session || true
 
       - name: Upload logs as artifact
         uses: actions/upload-artifact@v4
