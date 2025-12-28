@@ -1,0 +1,54 @@
+name: Fetch Supabase Function Logs (v2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      supabase_token:
+        description: 'Supabase access token (optional — workflow will fallback to repo secret)'
+        required: false
+      project_ref:
+        description: 'Supabase project ref'
+        required: true
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Fetch functions list
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ github.event.inputs.supabase_token || secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "Project: $SUPABASE_PROJECT_REF"
+          npx --yes supabase@latest functions list --project-ref "$SUPABASE_PROJECT_REF" || true
+
+      - name: Fetch logs for create-stripe-checkout
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ github.event.inputs.supabase_token || secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "---- logs: create-stripe-checkout ----"
+          npx --yes supabase@latest functions logs create-stripe-checkout --project-ref "$SUPABASE_PROJECT_REF" --since 24h || true
+
+      - name: Fetch logs for verify-stripe-session
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ github.event.inputs.supabase_token || secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "---- logs: verify-stripe-session ----"
+          npx --yes supabase@latest functions logs verify-stripe-session --project-ref "$SUPABASE_PROJECT_REF" --since 24h || true
+
+      - name: Upload logs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-function-logs
+          path: |
+            .
