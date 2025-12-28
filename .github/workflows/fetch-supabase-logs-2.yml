@@ -7,8 +7,8 @@ on:
         description: 'Supabase access token (optional — workflow will fallback to repo secret)'
         required: false
       project_ref:
-        description: 'Supabase project ref'
-        required: true
+        description: 'Supabase project ref (optional — workflow will fallback to repo secret)'
+        required: false
 
 jobs:
   fetch-logs:
