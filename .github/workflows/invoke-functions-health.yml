@@ -1,0 +1,34 @@
+name: Invoke Supabase Functions Health
+
+on:
+  workflow_dispatch:
+
+jobs:
+  invoke-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl function health endpoints
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p responses
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "SUPABASE_URL secret not set"
+            exit 1
+          fi
+          # Convert https://project.supabase.co -> https://project.functions.supabase.co/
+          FUNCTIONS_BASE="${SUPABASE_URL/.supabase.co/.functions.supabase.co}/"
+          echo "Functions base: $FUNCTIONS_BASE"
+          for fn in create-stripe-checkout verify-stripe-session; do
+            url="${FUNCTIONS_BASE}${fn}?health=1"
+            echo "Invoking $fn -> $url"
+            curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -o "responses/${fn}.body.txt" "$url" || true
+            echo "Saved responses/${fn}.body.txt"
+          done
+
+      - name: Upload responses
+        uses: actions/upload-artifact@v4
+        with:
+          name: function-health-responses
+          path: responses
