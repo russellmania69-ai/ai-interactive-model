@@ -1,6 +1,16 @@
 export default async function handler(request: Request) {
   try {
+    console.log('create-stripe-checkout: incoming request', { method: request.method, url: request.url });
     if (request.method !== 'POST') {
+      // provide a simple health/debug response for GET requests
+      if (request.method === 'GET') {
+        const STRIPE_SECRET = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET');
+        return new Response(JSON.stringify({ ok: true, service: 'create-stripe-checkout', stripe_configured: !!STRIPE_SECRET }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
       return new Response(JSON.stringify({ ok: false, error: 'POST required' }), {
         status: 405,
         headers: { 'content-type': 'application/json' },
@@ -16,6 +26,7 @@ export default async function handler(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
+    console.log('create-stripe-checkout: body', body);
     const { priceId, success_url, cancel_url, quantity = 1 } = body as Record<string, any>;
 
     if (!priceId || !success_url || !cancel_url) {
@@ -40,8 +51,8 @@ export default async function handler(request: Request) {
       },
       body: params.toString(),
     });
-
     const data = await resp.json().catch(() => ({ error: 'invalid-json' }));
+    console.log('create-stripe-checkout: stripe response', { status: resp.status, data });
     if (!resp.ok) {
       return new Response(JSON.stringify({ ok: false, error: data }), {
         status: resp.status || 500,
@@ -54,6 +65,7 @@ export default async function handler(request: Request) {
       headers: { 'content-type': 'application/json' },
     });
   } catch (err) {
+    console.error('create-stripe-checkout: runtime error', err);
     return new Response(JSON.stringify({ ok: false, error: String(err) }), {
       status: 500,
       headers: { 'content-type': 'application/json' },
