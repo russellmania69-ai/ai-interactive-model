@@ -17,11 +17,11 @@ jobs:
             echo "SUPABASE_URL secret not set"
             exit 1
           fi
-          # Convert https://project.supabase.co -> https://project.functions.supabase.co/
-          FUNCTIONS_BASE="${SUPABASE_URL/.supabase.co/.functions.supabase.co}/"
+          # Use the standard functions HTTP path under the project domain
+          FUNCTIONS_BASE="${SUPABASE_URL%/}/functions/v1"
           echo "Functions base: $FUNCTIONS_BASE"
           for fn in create-stripe-checkout verify-stripe-session; do
-            url="${FUNCTIONS_BASE}${fn}?health=1"
+            url="${FUNCTIONS_BASE}/${fn}?health=1"
             echo "Invoking $fn -> $url"
             curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -o "responses/${fn}.body.txt" "$url" || true
             echo "Saved responses/${fn}.body.txt"
