@@ -24,7 +24,9 @@ jobs:
 
       - name: Install Supabase CLI
         run: |
-          npm install -g supabase
+          set -euo pipefail
+          echo "Installing Supabase CLI via official install script"
+          curl -fsSL https://raw.githubusercontent.com/supabase/cli/master/install.sh | sh
           supabase --version || true
 
       - name: Fetch functions list
