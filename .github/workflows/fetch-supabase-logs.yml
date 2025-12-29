@@ -22,11 +22,19 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Supabase CLI
+      - name: Install Supabase CLI (download release)
         run: |
           set -euo pipefail
-          echo "Installing Supabase CLI via official install script"
-          curl -fsSL https://raw.githubusercontent.com/supabase/cli/master/install.sh | sh
+          echo "Downloading Supabase CLI release for this runner"
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then ASSET="supabase-linux-amd64.tar.gz"; fi
+          if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then ASSET="supabase-linux-arm64.tar.gz"; fi
+          if [ -z "${ASSET:-}" ]; then echo "Unsupported architecture: $ARCH"; exit 1; fi
+          URL="https://github.com/supabase/cli/releases/latest/download/$ASSET"
+          echo "Fetching $URL"
+          curl -fsSL "$URL" -o supabase.tar.gz
+          tar -xzf supabase.tar.gz
+          sudo mv supabase /usr/local/bin/supabase
           supabase --version || true
 
       - name: Fetch functions list
