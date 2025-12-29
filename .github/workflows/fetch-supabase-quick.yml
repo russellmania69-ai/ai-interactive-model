@@ -1,0 +1,55 @@
+name: Quick Fetch Supabase Functions
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: 'Supabase project ref'
+        required: true
+
+jobs:
+  quick-invoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Invoke functions and save responses
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p logs
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "SUPABASE_URL not set" > logs/invoke.txt
+            exit 1
+          fi
+          BASE="${SUPABASE_URL%/}/functions/v1"
+          echo "BASE=$BASE" > logs/invoke.txt
+
+          for fn in create-stripe-checkout verify-stripe-session; do
+            url="$BASE/$fn?health=1"
+            echo "GET $url" >> logs/invoke.txt
+            curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -o logs/${fn}.health.txt "$url" || true
+          done
+
+          cat > logs/create-payload.json <<'JSON'
+{ "priceId": "price_test_placeholder", "success_url": "https://example.com/success", "cancel_url": "https://example.com/cancel", "quantity": 1 }
+JSON
+          curl -sS -X POST -H "Content-Type: application/json" -d @logs/create-payload.json -w "\nHTTP_STATUS:%{http_code}\n" -o logs/create-response.json "$BASE/create-stripe-checkout" || true
+
+          SESSION_ID=$(jq -r '.session.id // .sessionId // .session_id // .id // empty' logs/create-response.json 2>/dev/null || true)
+          echo "SESSION=$SESSION_ID" >> logs/invoke.txt
+          if [ -n "$SESSION_ID" ]; then
+            curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -o logs/verify-response.json "$BASE/verify-stripe-session?session_id=$SESSION_ID" || true
+          fi
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: quick-supabase-logs
+          path: logs
