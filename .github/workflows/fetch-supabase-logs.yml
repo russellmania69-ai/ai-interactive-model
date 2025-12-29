@@ -53,6 +53,7 @@ jobs:
             supabase link --project-ref "$SUPABASE_PROJECT_REF" || true
             supabase functions list > supabase-logs/functions-list.txt 2>&1 || true
           else
+            npx --yes supabase@latest link --project-ref "$SUPABASE_PROJECT_REF" || true
             npx --yes supabase@latest functions list > supabase-logs/functions-list.txt 2>&1 || true
           fi
 
@@ -65,9 +66,9 @@ jobs:
           mkdir -p supabase-logs
           echo "---- logs: create-stripe-checkout ----" > supabase-logs/create-stripe-checkout.log
           if command -v supabase >/dev/null 2>&1; then
-            supabase functions logs create-stripe-checkout --since 24h > supabase-logs/create-stripe-checkout.log 2>&1 || true
+            supabase functions logs create-stripe-checkout > supabase-logs/create-stripe-checkout.log 2>&1 || true
           else
-            npx --yes supabase@latest functions logs create-stripe-checkout --since 24h > supabase-logs/create-stripe-checkout.log 2>&1 || true
+            npx --yes supabase@latest functions logs create-stripe-checkout > supabase-logs/create-stripe-checkout.log 2>&1 || true
           fi
 
       - name: Fetch logs for verify-stripe-session
@@ -79,9 +80,9 @@ jobs:
           mkdir -p supabase-logs
           echo "---- logs: verify-stripe-session ----" > supabase-logs/verify-stripe-session.log
           if command -v supabase >/dev/null 2>&1; then
-            supabase functions logs verify-stripe-session --since 24h > supabase-logs/verify-stripe-session.log 2>&1 || true
+            supabase functions logs verify-stripe-session > supabase-logs/verify-stripe-session.log 2>&1 || true
           else
-            npx --yes supabase@latest functions logs verify-stripe-session --since 24h > supabase-logs/verify-stripe-session.log 2>&1 || true
+            npx --yes supabase@latest functions logs verify-stripe-session > supabase-logs/verify-stripe-session.log 2>&1 || true
           fi
 
       - name: Upload logs as artifact
