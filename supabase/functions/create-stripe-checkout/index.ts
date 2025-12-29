@@ -51,16 +51,24 @@ export default async function handler(request: Request) {
       },
       body: params.toString(),
     });
-    const data = await resp.json().catch(() => ({ error: 'invalid-json' }));
-    console.log('create-stripe-checkout: stripe response', { status: resp.status, data });
+    // Read raw text and try to parse JSON so we can safely return string errors
+    const raw = await resp.text().catch(() => '');
+    let data: any = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      data = null;
+    }
+    console.log('create-stripe-checkout: stripe response', { status: resp.status, data, raw: raw && raw.slice(0, 200) });
     if (!resp.ok) {
-      return new Response(JSON.stringify({ ok: false, error: data }), {
+      const errText = data && (data.error || data.message) ? (data.error || data.message) : raw || 'stripe error';
+      return new Response(JSON.stringify({ ok: false, error: String(errText) }), {
         status: resp.status || 500,
         headers: { 'content-type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, session: data }), {
+    return new Response(JSON.stringify({ ok: true, session: data || raw }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });
