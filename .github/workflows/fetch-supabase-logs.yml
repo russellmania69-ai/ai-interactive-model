@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           mkdir -p supabase-logs
           echo "Project: $SUPABASE_PROJECT_REF" > supabase-logs/functions-list.txt
-          npx --yes supabase@latest functions list --project-ref "$SUPABASE_PROJECT_REF" > supabase-logs/functions-list.txt 2>&1 || true
+          npx --yes supabase@latest functions list > supabase-logs/functions-list.txt 2>&1 || true
 
       - name: Fetch logs for create-stripe-checkout
         env:
@@ -40,7 +40,7 @@ jobs:
           set -euo pipefail
           mkdir -p supabase-logs
           echo "---- logs: create-stripe-checkout ----" > supabase-logs/create-stripe-checkout.log
-          npx --yes supabase@latest functions logs create-stripe-checkout --project-ref "$SUPABASE_PROJECT_REF" --since 24h > supabase-logs/create-stripe-checkout.log 2>&1 || true
+          npx --yes supabase@latest functions logs create-stripe-checkout --since 24h > supabase-logs/create-stripe-checkout.log 2>&1 || true
 
       - name: Fetch logs for verify-stripe-session
         env:
@@ -50,7 +50,7 @@ jobs:
           set -euo pipefail
           mkdir -p supabase-logs
           echo "---- logs: verify-stripe-session ----" > supabase-logs/verify-stripe-session.log
-          npx --yes supabase@latest functions logs verify-stripe-session --project-ref "$SUPABASE_PROJECT_REF" --since 24h > supabase-logs/verify-stripe-session.log 2>&1 || true
+          npx --yes supabase@latest functions logs verify-stripe-session --since 24h > supabase-logs/verify-stripe-session.log 2>&1 || true
 
       - name: Upload logs as artifact
         uses: actions/upload-artifact@v4
