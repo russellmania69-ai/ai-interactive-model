@@ -6,6 +6,9 @@ on:
       project_ref:
         description: 'Supabase project ref'
         required: true
+  push:
+    branches:
+      - quick-fetch-trigger
 
 jobs:
   quick-invoke:
