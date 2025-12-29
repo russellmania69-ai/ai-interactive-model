@@ -27,12 +27,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p logs
+          # fallback to known project ref domain when secret is not available
           if [ -z "${SUPABASE_URL:-}" ]; then
-            echo "SUPABASE_URL not set" > logs/invoke.txt
-            exit 1
+            SUPABASE_URL="https://wnytflqoxaxglgetafqn.supabase.co"
           fi
+          echo "Using SUPABASE_URL=$SUPABASE_URL" > logs/invoke.txt
           BASE="${SUPABASE_URL%/}/functions/v1"
-          echo "BASE=$BASE" > logs/invoke.txt
+          echo "BASE=$BASE" >> logs/invoke.txt
 
           for fn in create-stripe-checkout verify-stripe-session; do
             url="$BASE/$fn?health=1"
