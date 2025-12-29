@@ -57,32 +57,63 @@ jobs:
             npx --yes supabase@latest functions list > supabase-logs/functions-list.txt 2>&1 || true
           fi
 
-      - name: Fetch logs for create-stripe-checkout
+      - name: CLI debug + functions list output
         env:
           SUPABASE_ACCESS_TOKEN: ${{ github.event.inputs.supabase_token || secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
         run: |
           set -euo pipefail
           mkdir -p supabase-logs
-          echo "---- logs: create-stripe-checkout ----" > supabase-logs/create-stripe-checkout.log
+          echo "--- npx supabase --version" > supabase-logs/cli-debug.txt
           if command -v supabase >/dev/null 2>&1; then
-            supabase functions logs create-stripe-checkout > supabase-logs/create-stripe-checkout.log 2>&1 || true
+            supabase --version >> supabase-logs/cli-debug.txt 2>&1 || true
+            supabase --help >> supabase-logs/cli-debug.txt 2>&1 || true
           else
-            npx --yes supabase@latest functions logs create-stripe-checkout > supabase-logs/create-stripe-checkout.log 2>&1 || true
+            npx --yes supabase@latest --version >> supabase-logs/cli-debug.txt 2>&1 || true
+            npx --yes supabase@latest --help >> supabase-logs/cli-debug.txt 2>&1 || true
           fi
+          echo "--- functions list" >> supabase-logs/cli-debug.txt
+          npx --yes supabase@latest functions list >> supabase-logs/cli-debug.txt 2>&1 || true
 
-      - name: Fetch logs for verify-stripe-session
+      - name: Invoke functions (health + create -> verify)
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ github.event.inputs.supabase_token || secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: ${{ github.event.inputs.project_ref || secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_URL: ${{ github.event.inputs.supabase_token && '' || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
         run: |
           set -euo pipefail
           mkdir -p supabase-logs
-          echo "---- logs: verify-stripe-session ----" > supabase-logs/verify-stripe-session.log
-          if command -v supabase >/dev/null 2>&1; then
-            supabase functions logs verify-stripe-session > supabase-logs/verify-stripe-session.log 2>&1 || true
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "SUPABASE_URL not set" > supabase-logs/invoke.txt
+            exit 1
+          fi
+          BASE="${SUPABASE_URL%/}/functions/v1"
+          echo "Functions base: $BASE" > supabase-logs/invoke.txt
+
+          # Health checks
+          for fn in create-stripe-checkout verify-stripe-session; do
+            url="$BASE/$fn?health=1"
+            echo "GET $url" >> supabase-logs/invoke.txt
+            curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -o supabase-logs/${fn}.health.txt "$url" || true
+          done
+
+          # POST create-stripe-checkout with a minimal test payload (may return stripe error if priceId invalid)
+          CREATE_URL="$BASE/create-stripe-checkout"
+          echo "POST $CREATE_URL" >> supabase-logs/invoke.txt
+          cat > supabase-logs/create-payload.json <<'JSON'
+{ "priceId": "price_test_placeholder", "success_url": "https://example.com/success", "cancel_url": "https://example.com/cancel", "quantity": 1 }
+JSON
+          curl -sS -X POST -H "Content-Type: application/json" -d @supabase-logs/create-payload.json -w "\nHTTP_STATUS:%{http_code}\n" -o supabase-logs/create-response.json "$CREATE_URL" || true
+
+          # Try to extract session id and call verify (works if create returned a session.id)
+          SESSION_ID=$(jq -r '.session.id // .sessionId // .session_id // .id // empty' supabase-logs/create-response.json 2>/dev/null || true)
+          echo "Extracted session id: $SESSION_ID" >> supabase-logs/invoke.txt
+          if [ -n "$SESSION_ID" ]; then
+            VERIFY_URL="$BASE/verify-stripe-session?session_id=$SESSION_ID"
+            echo "GET $VERIFY_URL" >> supabase-logs/invoke.txt
+            curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -o supabase-logs/verify-response.json "$VERIFY_URL" || true
           else
-            npx --yes supabase@latest functions logs verify-stripe-session > supabase-logs/verify-stripe-session.log 2>&1 || true
+            echo "No session id extracted; skipping verify invocation" >> supabase-logs/invoke.txt
           fi
 
       - name: Upload logs as artifact
