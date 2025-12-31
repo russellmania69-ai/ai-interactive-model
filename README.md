@@ -60,20 +60,18 @@ Notes:
 
 LLM Provider (optional)
 -----------------------
-You can set a default LLM provider used by client builds via `VITE_DEFAULT_LLM`.
-
-Clients will now default to Claude Sonnet 4.5 when no `VITE_DEFAULT_LLM` is provided. To explicitly enable it for a build, set:
+You can set a default LLM provider used by client builds via `VITE_DEFAULT_LLM`. To enable Claude Sonnet 4.5 for all clients, set:
 
 ```
 VITE_DEFAULT_LLM=claude-sonnet-4.5
 ```
 
-Notes:
-- The client-side helper at `src/lib/llm.ts` reads `VITE_DEFAULT_LLM` and falls back to `claude-sonnet-4.5` if unset.
-- Do NOT put private Anthropic keys in the browser. Add `ANTHROPIC_API_KEY` and/or an API proxy on the server to perform Anthropic calls.
-- `.env.production.example` includes an example `VITE_DEFAULT_LLM=claude-sonnet-4.5` entry for convenience.
+This project does not currently include a built-in Anthropic/Claude integration; setting this env var surfaces the default value to client code via `src/lib/llm.ts`. To fully enable Claude Sonnet 4.5 you will need to:
 
-If you'd like, I can open a PR that wires `DEFAULT_LLM` into specific backend request code or add a small serverless proxy example.
+- Add server-side credentials and/or an API proxy that performs Anthropic API calls (do not embed private keys in the browser).
+- Wire the provider in your backend or serverless functions to route requests to Anthropic using the chosen model name.
+
+If you want, I can open a PR that wires `DEFAULT_LLM` into specific request code or add a serverless proxy example.
 ### Serverless proxy example (Vercel)
 
 We've added a minimal Vercel serverless function example at `api/anthropic-proxy.ts` that demonstrates a secure pattern for calling Anthropic/Claude from the server (clients call this endpoint, server holds the secret API key).
