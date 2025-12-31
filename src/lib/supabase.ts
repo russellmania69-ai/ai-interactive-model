@@ -5,8 +5,8 @@ import { createMockSupabase } from './supabase-mock';
 // Initialize Supabase client using environment variables (Vite: import.meta.env)
 // Vite exposes env vars as `import.meta.env.VITE_...`.
 // Prefer `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for client usage.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const supabaseUrl = import.meta.env.https://wnytflqoxaxglgetafqn.supabase.co as string | undefined;
+const supabaseKey = import.meta.env.sb_secret_LPREFjdNhDgMOBdr6xGJPA_I7sCHuEd as string | undefined;
 
 // Provide a top-level `supabase` binding assigned conditionally so we never use
 // `export` inside a block (which is invalid syntax).
