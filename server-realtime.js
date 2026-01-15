@@ -7,6 +7,8 @@ app.use(express.static('public'));
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const TAVUS_KEY = process.env.TAVUS_API_KEY;
+const TAVUS_URL = process.env.TAVUS_API_URL || 'https://api.tavus.ai/v1/generate';
 
 if (!OPENAI_KEY) {
   console.error('Missing OPENAI_API_KEY');
@@ -57,6 +59,7 @@ app.get('/api/realtime', async (req, res) => {
     const reader = r.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
+    let assistantFull = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -73,6 +76,37 @@ app.get('/api/realtime', async (req, res) => {
         if (!line.startsWith('data:')) continue;
         const payload = line.replace(/^data:\s*/, '');
         if (payload === '[DONE]') {
+          // When streaming completes, optionally call Tavus to generate TTS audio
+          if (TAVUS_KEY && assistantFull.trim()) {
+            try {
+              const avatarId = String(req.query.avatar || process.env.DEFAULT_TAVUS_AVATAR || '');
+              const tavusBody = {
+                avatar_id: avatarId,
+                input: { text: assistantFull },
+                options: {}
+              };
+              const tr = await fetch(TAVUS_URL, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${TAVUS_KEY}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tavusBody)
+              });
+              let tavusData = null;
+              try { tavusData = await tr.json(); } catch (e) { tavusData = null; }
+              if (tr.ok && tavusData) {
+                const audio_url = tavusData?.audio_url || tavusData?.result?.audio_url || tavusData?.data?.audio_url || null;
+                const audio_b64 = tavusData?.audio_base64 || tavusData?.result?.audio_base64 || null;
+                const payloadObj = { audio_url: audio_url || null, audio_base64: audio_b64 || null, raw: tavusData };
+                res.write(`event: audio\ndata: ${JSON.stringify(payloadObj)}\n\n`);
+              } else {
+                res.write(`event: audio_error\ndata: ${JSON.stringify({ status: tr.status, body: tavusData })}\n\n`);
+              }
+            } catch (e) {
+              res.write(`event: audio_error\ndata: ${JSON.stringify({ error: String(e) })}\n\n`);
+            }
+          }
           res.write('event: done\ndata: [DONE]\n\n');
           res.end();
           return;
@@ -93,6 +127,7 @@ app.get('/api/realtime', async (req, res) => {
             // escape newlines
             const safe = token.replace(/\n/g, '\\n');
             res.write(`data: ${safe}\n\n`);
+            assistantFull += token;
           }
         } catch (e) {
           // ignore parse errors for partial lines
