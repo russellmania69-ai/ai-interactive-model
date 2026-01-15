@@ -9,6 +9,7 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const TAVUS_KEY = process.env.TAVUS_API_KEY;
 const TAVUS_URL = process.env.TAVUS_API_URL || 'https://api.tavus.ai/v1/generate';
+import cache from './lib/tavus-cache.js';
 
 if (!OPENAI_KEY) {
   console.error('Missing OPENAI_API_KEY');
@@ -80,28 +81,50 @@ app.get('/api/realtime', async (req, res) => {
           if (TAVUS_KEY && assistantFull.trim()) {
             try {
               const avatarId = String(req.query.avatar || process.env.DEFAULT_TAVUS_AVATAR || '');
-              const tavusBody = {
-                avatar_id: avatarId,
-                input: { text: assistantFull },
-                options: {}
-              };
-              const tr = await fetch(TAVUS_URL, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${TAVUS_KEY}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(tavusBody)
-              });
-              let tavusData = null;
-              try { tavusData = await tr.json(); } catch (e) { tavusData = null; }
-              if (tr.ok && tavusData) {
-                const audio_url = tavusData?.audio_url || tavusData?.result?.audio_url || tavusData?.data?.audio_url || null;
-                const audio_b64 = tavusData?.audio_base64 || tavusData?.result?.audio_base64 || null;
-                const payloadObj = { audio_url: audio_url || null, audio_base64: audio_b64 || null, raw: tavusData };
-                res.write(`event: audio\ndata: ${JSON.stringify(payloadObj)}\n\n`);
+              const text = assistantFull;
+              const hash = cache.hashText(text);
+              const existing = cache.cacheExists(hash, 'mp3');
+              if (existing) {
+                res.write(`event: audio\ndata: ${JSON.stringify({ audio_url: cache.audioPublicUrl(hash, 'mp3'), cached: true })}\n\n`);
               } else {
-                res.write(`event: audio_error\ndata: ${JSON.stringify({ status: tr.status, body: tavusData })}\n\n`);
+                const tavusBody = {
+                  avatar_id: avatarId,
+                  input: { text },
+                  options: {}
+                };
+                const tr = await fetch(TAVUS_URL, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${TAVUS_KEY}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(tavusBody)
+                });
+                let tavusData = null;
+                try { tavusData = await tr.json(); } catch (e) { tavusData = null; }
+                if (tr.ok && tavusData) {
+                  const audio_url = tavusData?.audio_url || tavusData?.result?.audio_url || tavusData?.data?.audio_url || null;
+                  const audio_b64 = tavusData?.audio_base64 || tavusData?.result?.audio_base64 || null;
+                  if (audio_url) {
+                    const ar = await fetch(audio_url);
+                    if (ar.ok) {
+                      const buf = Buffer.from(await ar.arrayBuffer());
+                      cache.saveAudioBuffer(hash, buf, 'mp3');
+                      res.write(`event: audio\ndata: ${JSON.stringify({ audio_url: cache.audioPublicUrl(hash, 'mp3'), raw: tavusData })}\n\n`);
+                    } else {
+                      res.write(`event: audio_error\ndata: ${JSON.stringify({ status: ar.status })}\n\n`);
+                    }
+                  } else if (audio_b64) {
+                    const b64 = String(audio_b64).replace(/^data:audio\/[a-zA-Z0-9.+-]+;base64,/, '');
+                    const buf = Buffer.from(b64, 'base64');
+                    cache.saveAudioBuffer(hash, buf, 'mp3');
+                    res.write(`event: audio\ndata: ${JSON.stringify({ audio_url: cache.audioPublicUrl(hash, 'mp3'), raw: tavusData })}\n\n`);
+                  } else {
+                    res.write(`event: audio_error\ndata: ${JSON.stringify({ raw: tavusData })}\n\n`);
+                  }
+                } else {
+                  res.write(`event: audio_error\ndata: ${JSON.stringify({ status: tr.status, body: tavusData })}\n\n`);
+                }
               }
             } catch (e) {
               res.write(`event: audio_error\ndata: ${JSON.stringify({ error: String(e) })}\n\n`);

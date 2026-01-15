@@ -1,5 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+import cache from '@/lib/tavus-cache';
 dotenv.config();
 
 const app = express();
@@ -13,9 +18,16 @@ if (!TAVUS_KEY) {
   console.warn('Warning: TAVUS_API_KEY is not set — /api/tavus will return 500');
 }
 
+// Simple per-IP rate limiter to protect Tavus API usage (configurable via env)
+const tavusLimiter = rateLimit({
+  windowMs: Number(process.env.TAVUS_RATE_WINDOW_MS || 60_000),
+  max: Number(process.env.TAVUS_RATE_MAX || 6),
+  message: { error: 'Rate limit exceeded' }
+});
+
 // POST /api/tavus/generate
 // body: { avatarId: string, input: { text: string }, options?: object }
-app.post('/api/tavus/generate', async (req, res) => {
+app.post('/api/tavus/generate', tavusLimiter, async (req, res) => {
   if (!TAVUS_KEY) return res.status(500).json({ error: 'TAVUS_API_KEY not configured' });
   const { avatarId, input, options } = req.body || {};
   if (!avatarId || !input || typeof input.text !== 'string') {
@@ -23,9 +35,17 @@ app.post('/api/tavus/generate', async (req, res) => {
   }
 
   try {
+    const text = String(input.text || '');
+    const hash = cache.hashText(text);
+    // prefer mp3; adapt if Tavus returns other formats
+    const existing = cache.cacheExists(hash, 'mp3');
+    if (existing) {
+      return res.json({ ok: true, cached: true, audio_url: cache.audioPublicUrl(hash, 'mp3') });
+    }
+
     const payload = {
       avatar_id: avatarId,
-      input: { text: input.text },
+      input: { text },
       options: options || {}
     };
 
@@ -47,8 +67,30 @@ app.post('/api/tavus/generate', async (req, res) => {
       return res.status(r.status || 500).json({ error: data || 'Tavus API error' });
     }
 
-    // Return the provider response to the client. Typical Tavus responses include
-    // an audio URL or base64 — we forward whatever the API returns.
+    // Save audio if present (either audio_url or base64)
+    try {
+      const audio_url = data?.audio_url || data?.result?.audio_url || data?.data?.audio_url || null;
+      const audio_b64 = data?.audio_base64 || data?.result?.audio_base64 || null;
+      if (audio_url) {
+        // fetch remote audio and cache
+        const ar = await fetch(audio_url);
+        if (ar.ok) {
+          const buf = Buffer.from(await ar.arrayBuffer());
+          cache.saveAudioBuffer(hash, buf, 'mp3');
+          return res.json({ ok: true, audio_url: cache.audioPublicUrl(hash, 'mp3'), raw: data });
+        }
+      } else if (audio_b64) {
+        // decode and save
+        const b64 = String(audio_b64).replace(/^data:audio\/[a-zA-Z0-9.+-]+;base64,/, '');
+        const buf = Buffer.from(b64, 'base64');
+        cache.saveAudioBuffer(hash, buf, 'mp3');
+        return res.json({ ok: true, audio_url: cache.audioPublicUrl(hash, 'mp3'), raw: data });
+      }
+    } catch (e) {
+      console.warn('Failed to cache audio:', e);
+    }
+
+    // fallback: forward provider response
     res.json({ ok: true, data });
   } catch (err) {
     console.error('Tavus proxy error', err);
