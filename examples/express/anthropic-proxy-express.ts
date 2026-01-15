@@ -52,7 +52,9 @@ app.post('/proxy', async (req: Request, res: Response) => {
   if (!apiKey) return res.status(501).json({ error: 'Anthropic API key not configured (ANTHROPIC_API_KEY)' });
 
   const input = typeof req.body.input === 'string' ? req.body.input : String(req.body.input ?? '');
-  const model = typeof req.body.model === 'string' && req.body.model.length ? req.body.model : DEFAULT_MODEL;
+  // Force the server default model for all clients to ensure consistent behavior
+  // and central control of the model used by the proxy.
+  const model = DEFAULT_MODEL;
   if (!input) return res.status(400).json({ error: 'Missing `input` in request body' });
 
   try {
