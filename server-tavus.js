@@ -13,6 +13,8 @@ app.use(express.static('public'));
 
 const TAVUS_KEY = process.env.TAVUS_API_KEY;
 const TAVUS_URL = process.env.TAVUS_API_URL || 'https://api.tavus.ai/v1/generate';
+const TAVUS_CACHE_TTL_DAYS = Number(process.env.TAVUS_CACHE_TTL_DAYS || 7);
+const TAVUS_ADMIN_SECRET = process.env.TAVUS_ADMIN_SECRET || '';
 
 if (!TAVUS_KEY) {
   console.warn('Warning: TAVUS_API_KEY is not set — /api/tavus will return 500');
@@ -98,9 +100,42 @@ app.post('/api/tavus/generate', tavusLimiter, async (req, res) => {
   }
 });
 
+// Admin endpoint to purge old cached audio. Protect with TAVUS_ADMIN_SECRET header `x-admin-secret`.
+app.post('/api/tavus/cache/purge', async (req, res) => {
+  const secret = (req.headers['x-admin-secret'] || req.query.secret || '').toString();
+  if (TAVUS_ADMIN_SECRET && secret !== TAVUS_ADMIN_SECRET) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  try {
+    const removed = cache.cleanupOldFiles(TAVUS_CACHE_TTL_DAYS, 'mp3');
+    return res.json({ ok: true, removed });
+  } catch (e) {
+    return res.status(500).json({ error: String(e) });
+  }
+});
+
 const port = process.env.PORT || 3000;
 if (require.main === module) {
-  app.listen(port, () => console.log(`Tavus proxy listening on ${port}`));
+  app.listen(port, async () => {
+    console.log(`Tavus proxy listening on ${port}`);
+    // Initial cleanup on startup
+    try {
+      const removed = cache.cleanupOldFiles(TAVUS_CACHE_TTL_DAYS, 'mp3');
+      if (removed && removed.length) console.log('Removed cached files on startup:', removed.length);
+    } catch (e) {
+      console.warn('Cache cleanup failed on startup', e);
+    }
+    // Schedule daily cleanup
+    const dayMs = 24 * 60 * 60 * 1000;
+    setInterval(() => {
+      try {
+        const removed = cache.cleanupOldFiles(TAVUS_CACHE_TTL_DAYS, 'mp3');
+        if (removed && removed.length) console.log('Periodic cache cleanup removed', removed.length, 'files');
+      } catch (e) {
+        console.warn('Periodic cache cleanup failed', e);
+      }
+    }, dayMs);
+  });
 }
 
 export default app;

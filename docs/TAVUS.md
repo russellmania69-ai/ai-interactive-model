@@ -40,6 +40,22 @@ Caching & Rate limiting
   - `TAVUS_RATE_WINDOW_MS` (default 60000) — window in ms
   - `TAVUS_RATE_MAX` (default 6) — max requests per window
 
+Cache cleanup and admin purge
+----------------------------
+
+- You can control cache TTL via `TAVUS_CACHE_TTL_DAYS` (default 7 days). On startup the proxy will run an initial cleanup and a daily scheduled cleanup.
+- An admin endpoint is available to purge cached audio immediately:
+
+  - `POST /api/tavus/cache/purge` — requires `x-admin-secret` header or `?secret=` query param matching `TAVUS_ADMIN_SECRET` env var.
+
+  Example:
+
+  ```bash
+  curl -X POST -H "x-admin-secret: your-secret" http://localhost:3000/api/tavus/cache/purge
+  ```
+
+  The endpoint returns a JSON object containing the list of removed files.
+
 Security & Production
 ---------------------
 - Ensure you add authentication and stricter rate limiting before exposing the demo publicly.
