@@ -2,6 +2,18 @@ import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 
+import IORedis from 'ioredis';
+let RedisStoreRealtime = null;
+try {
+  // optional dependency: rate-limit-redis
+  // npm i rate-limit-redis
+  // If not installed will fall back to in-memory limiter
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  RedisStoreRealtime = require('rate-limit-redis');
+} catch (e) {
+  RedisStoreRealtime = null;
+}
+
 const app = express();
 app.use(express.static('public'));
 
@@ -19,7 +31,31 @@ if (!OPENAI_KEY) {
 // Simple SSE endpoint that proxies OpenAI streaming chat completions.
 // Client opens an EventSource GET /api/realtime?prompt=... and receives
 // server-sent "data: <text>\n\n" events carrying incremental assistant tokens.
-app.get('/api/realtime', async (req, res) => {
+// Configure optional Redis-backed rate limiter for realtime endpoint
+const REALTIME_RATE_WINDOW_MS = Number(process.env.REALTIME_RATE_WINDOW_MS || 60_000);
+const REALTIME_RATE_MAX = Number(process.env.REALTIME_RATE_MAX || 6);
+let realtimeLimiter;
+const REALTIME_REDIS = process.env.REDIS_URL || process.env.REDIS || process.env.REDIS_URI || '';
+if (REALTIME_REDIS && RedisStoreRealtime) {
+  try {
+    const redisClientRealtime = new IORedis(REALTIME_REDIS);
+    const storeRealtime = new RedisStoreRealtime({ client: redisClientRealtime, expiry: Math.ceil(REALTIME_RATE_WINDOW_MS / 1000), prefix: 'realtime_rl:' });
+    // lazy require to avoid adding dependency to top-level
+    const rateLimit = require('express-rate-limit');
+    realtimeLimiter = rateLimit({ windowMs: REALTIME_RATE_WINDOW_MS, max: REALTIME_RATE_MAX, store: storeRealtime, standardHeaders: true, legacyHeaders: false, message: { error: 'Rate limit exceeded' } });
+    console.log('Realtime rate limiter: using Redis store');
+  } catch (err) {
+    console.warn('Failed to initialize Redis realtime limiter, falling back to memory limiter', err);
+    const rateLimit = require('express-rate-limit');
+    realtimeLimiter = rateLimit({ windowMs: REALTIME_RATE_WINDOW_MS, max: REALTIME_RATE_MAX, message: { error: 'Rate limit exceeded' } });
+  }
+} else {
+  const rateLimit = require('express-rate-limit');
+  realtimeLimiter = rateLimit({ windowMs: REALTIME_RATE_WINDOW_MS, max: REALTIME_RATE_MAX, message: { error: 'Rate limit exceeded' } });
+}
+
+app.get('/api/realtime', realtimeLimiter, async (req, res) => {
+/* realtime rate limiter middleware will be inserted below */
   const prompt = String(req.query.prompt || '');
   if (!prompt) return res.status(400).send('prompt required');
 
