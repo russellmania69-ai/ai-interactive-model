@@ -16,6 +16,11 @@ export function createMockSupabase(options?: { seeded?: boolean }) {
       return { data: { user: { id: 'mock-user', email: _opts?.email } as User }, error: null };
     },
     async signInWithPassword(_opts: { email?: string; password?: string }) {
+      // In seeded mock mode, return a mock user so sign-in flows succeed
+      if (options?.seeded) {
+        return { data: { user: { id: 'mock-user', email: _opts?.email || 'mock@local' } as User }, error: null };
+      }
+
       return { data: { user: null }, error: null } as PostgrestResponse<null>;
     },
     async signOut() {

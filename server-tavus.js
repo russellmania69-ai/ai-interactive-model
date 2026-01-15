@@ -2,13 +2,11 @@ import express from 'express';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import IORedis from 'ioredis';
+import metrics from '@/lib/metrics';
 let RedisStore = null;
 try {
-  // optional dependency: rate-limit-redis
-  // npm i rate-limit-redis
-  // If not installed will fall back to in-memory limiter
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  RedisStore = require('rate-limit-redis');
+  const mod = await import('rate-limit-redis');
+  RedisStore = mod?.default || mod;
 } catch (e) {
   RedisStore = null;
 }
@@ -54,12 +52,18 @@ if (REDIS_URL && RedisStore) {
     tavusLimiter = rateLimit({ windowMs, max: maxRequests, message: { error: 'Rate limit exceeded' } });
   }
 } else {
-  tavusLimiter = rateLimit({ windowMs, max: maxRequests, message: { error: 'Rate limit exceeded' } });
+    tavusLimiter = rateLimit({ windowMs, max: maxRequests, message: { error: 'Rate limit exceeded' },
+      handler: (req, res) => {
+        try { metrics.tavusRateLimited.inc(); } catch (e) {}
+        res.status(429).json({ error: 'Rate limit exceeded' });
+      }
+    });
 }
 
 // POST /api/tavus/generate
 // body: { avatarId: string, input: { text: string }, options?: object }
 app.post('/api/tavus/generate', tavusLimiter, async (req, res) => {
+  try { metrics.tavusRequests.inc(); } catch (e) {}
   if (!TAVUS_KEY) return res.status(500).json({ error: 'TAVUS_API_KEY not configured' });
   const { avatarId, input, options } = req.body || {};
   if (!avatarId || !input || typeof input.text !== 'string') {
@@ -72,8 +76,10 @@ app.post('/api/tavus/generate', tavusLimiter, async (req, res) => {
     // prefer mp3; adapt if Tavus returns other formats
     const existing = cache.cacheExists(hash, 'mp3');
     if (existing) {
+      try { metrics.tavusCacheHits.inc(); } catch (e) {}
       return res.json({ ok: true, cached: true, audio_url: cache.audioPublicUrl(hash, 'mp3') });
     }
+    try { metrics.tavusCacheMisses.inc(); } catch (e) {}
 
     const payload = {
       avatar_id: avatarId,
@@ -119,12 +125,14 @@ app.post('/api/tavus/generate', tavusLimiter, async (req, res) => {
         return res.json({ ok: true, audio_url: cache.audioPublicUrl(hash, 'mp3'), raw: data });
       }
     } catch (e) {
+      try { metrics.tavusErrors.inc(); } catch (err) {}
       console.warn('Failed to cache audio:', e);
     }
 
     // fallback: forward provider response
     res.json({ ok: true, data });
   } catch (err) {
+    try { metrics.tavusErrors.inc(); } catch (e) {}
     console.error('Tavus proxy error', err);
     res.status(500).json({ error: String(err) });
   }
@@ -133,11 +141,26 @@ app.post('/api/tavus/generate', tavusLimiter, async (req, res) => {
 // Admin endpoint to purge old cached audio. Protect with TAVUS_ADMIN_SECRET header `x-admin-secret`.
 app.post('/api/tavus/cache/purge', async (req, res) => {
   const secret = (req.headers['x-admin-secret'] || req.query.secret || '').toString();
-  if (TAVUS_ADMIN_SECRET && secret !== TAVUS_ADMIN_SECRET) {
+  // Support basic auth as alternative (use ADMIN_BASIC_USER and ADMIN_BASIC_PASS env vars)
+  const adminUser = process.env.ADMIN_BASIC_USER || '';
+  const adminPass = process.env.ADMIN_BASIC_PASS || '';
+  let basicOk = false;
+  try {
+    const auth = (req.headers['authorization'] || '').toString();
+    if (auth.startsWith('Basic ')) {
+      const b = Buffer.from(auth.replace(/^Basic\s+/, ''), 'base64').toString('utf8');
+      const [u, p] = b.split(':');
+      if (u === adminUser && p === adminPass && adminUser && adminPass) basicOk = true;
+    }
+  } catch (e) {}
+  if (TAVUS_ADMIN_SECRET) {
+    if (secret !== TAVUS_ADMIN_SECRET && !basicOk) return res.status(403).json({ error: 'forbidden' });
+  } else if (!basicOk) {
     return res.status(403).json({ error: 'forbidden' });
   }
   try {
     const removed = cache.cleanupOldFiles(TAVUS_CACHE_TTL_DAYS, 'mp3');
+    try { metrics.tavusCacheHits.inc(0); } catch (e) {}
     return res.json({ ok: true, removed });
   } catch (e) {
     return res.status(500).json({ error: String(e) });
@@ -169,3 +192,17 @@ if (require.main === module) {
 }
 
 export default app;
+
+// Expose protected metrics endpoint and healthcheck for observability
+try {
+  const METRICS_SECRET = process.env.METRICS_SECRET || '';
+  if (METRICS_SECRET) {
+    app.get('/metrics', (req, res) => {
+      const secretHeader = (req.headers['x-metrics-secret'] || req.headers['x-admin-secret'] || '').toString();
+      if (!secretHeader || secretHeader !== METRICS_SECRET) return res.status(403).send('forbidden');
+      try { return metrics.metricsMiddleware(req, res); } catch (e) { return res.status(500).send('metrics error'); }
+    });
+  }
+} catch (e) {}
+
+app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));

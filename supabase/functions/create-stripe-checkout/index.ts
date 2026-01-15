@@ -27,7 +27,7 @@ export default async function handler(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     console.log('create-stripe-checkout: body', body);
-    const { priceId, success_url, cancel_url, quantity = 1 } = body as Record<string, any>;
+    const { priceId, success_url, cancel_url, quantity = 1 } = body as Record<string, unknown>;
 
     if (!priceId || !success_url || !cancel_url) {
       return new Response(JSON.stringify({ ok: false, error: 'Missing priceId, success_url or cancel_url' }), {
@@ -53,7 +53,7 @@ export default async function handler(request: Request) {
     });
     // Read raw text and try to parse JSON so we can safely return string errors
     const raw = await resp.text().catch(() => '');
-    let data: any = null;
+    let data: unknown = null;
     try {
       data = raw ? JSON.parse(raw) : null;
     } catch (e) {
@@ -61,7 +61,12 @@ export default async function handler(request: Request) {
     }
     console.log('create-stripe-checkout: stripe response', { status: resp.status, data, raw: raw && raw.slice(0, 200) });
     if (!resp.ok) {
-      const errText = data && (data.error || data.message) ? (data.error || data.message) : raw || 'stripe error';
+      let errText = raw || 'stripe error';
+      if (data && typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+        const candidate = d.error ?? d.message;
+        if (candidate) errText = String(candidate);
+      }
       return new Response(JSON.stringify({ ok: false, error: String(errText) }), {
         status: resp.status || 500,
         headers: { 'content-type': 'application/json' },

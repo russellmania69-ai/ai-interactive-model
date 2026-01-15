@@ -5,11 +5,8 @@ dotenv.config();
 import IORedis from 'ioredis';
 let RedisStoreRealtime = null;
 try {
-  // optional dependency: rate-limit-redis
-  // npm i rate-limit-redis
-  // If not installed will fall back to in-memory limiter
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  RedisStoreRealtime = require('rate-limit-redis');
+  const mod = await import('rate-limit-redis');
+  RedisStoreRealtime = mod?.default || mod;
 } catch (e) {
   RedisStoreRealtime = null;
 }
@@ -22,6 +19,7 @@ const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const TAVUS_KEY = process.env.TAVUS_API_KEY;
 const TAVUS_URL = process.env.TAVUS_API_URL || 'https://api.tavus.ai/v1/generate';
 import cache from './lib/tavus-cache.js';
+import metrics from './lib/metrics.js';
 
 if (!OPENAI_KEY) {
   console.error('Missing OPENAI_API_KEY');
@@ -37,24 +35,28 @@ const REALTIME_RATE_MAX = Number(process.env.REALTIME_RATE_MAX || 6);
 let realtimeLimiter;
 const REALTIME_REDIS = process.env.REDIS_URL || process.env.REDIS || process.env.REDIS_URI || '';
 if (REALTIME_REDIS && RedisStoreRealtime) {
-  try {
+    try {
     const redisClientRealtime = new IORedis(REALTIME_REDIS);
     const storeRealtime = new RedisStoreRealtime({ client: redisClientRealtime, expiry: Math.ceil(REALTIME_RATE_WINDOW_MS / 1000), prefix: 'realtime_rl:' });
-    // lazy require to avoid adding dependency to top-level
-    const rateLimit = require('express-rate-limit');
+    // lazy import to avoid adding dependency to top-level
+    const rlMod = await import('express-rate-limit');
+    const rateLimit = rlMod?.default || rlMod;
     realtimeLimiter = rateLimit({ windowMs: REALTIME_RATE_WINDOW_MS, max: REALTIME_RATE_MAX, store: storeRealtime, standardHeaders: true, legacyHeaders: false, message: { error: 'Rate limit exceeded' } });
     console.log('Realtime rate limiter: using Redis store');
   } catch (err) {
     console.warn('Failed to initialize Redis realtime limiter, falling back to memory limiter', err);
-    const rateLimit = require('express-rate-limit');
+    const rlMod = await import('express-rate-limit');
+    const rateLimit = rlMod?.default || rlMod;
     realtimeLimiter = rateLimit({ windowMs: REALTIME_RATE_WINDOW_MS, max: REALTIME_RATE_MAX, message: { error: 'Rate limit exceeded' } });
   }
 } else {
-  const rateLimit = require('express-rate-limit');
+  const rlMod = await import('express-rate-limit');
+  const rateLimit = rlMod?.default || rlMod;
   realtimeLimiter = rateLimit({ windowMs: REALTIME_RATE_WINDOW_MS, max: REALTIME_RATE_MAX, message: { error: 'Rate limit exceeded' } });
 }
 
 app.get('/api/realtime', realtimeLimiter, async (req, res) => {
+  try { metrics.realtimeRequests.inc(); } catch (e) {}
 /* realtime rate limiter middleware will be inserted below */
   const prompt = String(req.query.prompt || '');
   if (!prompt) return res.status(400).send('prompt required');
@@ -203,5 +205,27 @@ app.get('/api/realtime', realtimeLimiter, async (req, res) => {
   }
 });
 
+// Expose Prometheus metrics (if metrics library loaded).
+// Protect metrics with `METRICS_SECRET` env var — if not provided, metrics endpoint is not registered.
+const METRICS_SECRET = process.env.METRICS_SECRET || '';
+try {
+  if (METRICS_SECRET) {
+    app.get('/metrics', (req, res) => {
+      const secretHeader = (req.headers['x-metrics-secret'] || req.headers['x-admin-secret'] || '').toString();
+      if (!secretHeader || secretHeader !== METRICS_SECRET) {
+        return res.status(403).send('forbidden');
+      }
+      try { return metrics.metricsMiddleware(req, res); } catch (e) { return res.status(500).send('metrics error'); }
+    });
+  } else {
+    console.warn('METRICS_SECRET not set: /metrics endpoint will NOT be exposed');
+  }
+} catch (e) {
+  // ignore if metrics isn't available
+}
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Realtime proxy listening on ${port}`));
+
+// Lightweight healthcheck
+app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));

@@ -123,13 +123,13 @@ export function ChatInterface({ sessionId, modelName, modelImage, onBack }: Chat
 
     try {
       const { data, error } = await supabase.functions.invoke('chat-ai-response', {
-        body: { 
-          message: input, 
-          modelName, 
+        body: {
+          message: input,
+          modelName,
           chatHistory: messages.slice(-10),
           sessionId: sessionId,
-          supabaseUrl: import.meta.env.https://wnytflqoxaxglgetafqn.supabase.co,
-          supabaseKey: import.meta.env.sb_secret_LPREFjdNhDgMOBdr6xGJPA_I7sCHuEd
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
+          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY || ''
         }
       });
 
