@@ -38,7 +38,7 @@ export default async function handler(request: Request) {
 
     // Read raw text and try to parse JSON so we can safely return string errors
     const raw = await resp.text().catch(() => '');
-    let data: any = null;
+    let data: unknown = null;
     try {
       data = raw ? JSON.parse(raw) : null;
     } catch (e) {
@@ -46,7 +46,12 @@ export default async function handler(request: Request) {
     }
     console.log('verify-stripe-session: stripe response', { status: resp.status, data, raw: raw && raw.slice(0, 200) });
     if (!resp.ok) {
-      const errText = data && (data.error || data.message) ? (data.error || data.message) : raw || 'stripe error';
+      let errText = raw || 'stripe error';
+      if (data && typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+        const candidate = d.error ?? d.message;
+        if (candidate) errText = String(candidate);
+      }
       return new Response(JSON.stringify({ ok: false, error: String(errText) }), {
         status: resp.status || 500,
         headers: { 'content-type': 'application/json' },

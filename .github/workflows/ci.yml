@@ -172,6 +172,20 @@ jobs:
             fi
             sleep 1
           done
+      - name: Smoke endpoints
+        run: |
+          # Verify health endpoint and (optionally) metrics endpoint using METRICS_SECRET
+          if [ -n "${METRICS_SECRET:-}" ]; then
+            echo "Checking /health..."
+            curl -sSf http://localhost:4173/health || { echo "health check failed"; exit 1; }
+            echo "Checking /metrics with secret..."
+            curl -sSf -H "x-metrics-secret: $METRICS_SECRET" http://localhost:4173/metrics || { echo "metrics check failed"; exit 1; }
+          else
+            echo "METRICS_SECRET not set; checking only /health"
+            curl -sSf http://localhost:4173/health || { echo "health check failed"; exit 1; }
+          fi
+        env:
+          METRICS_SECRET: ${{ secrets.METRICS_SECRET }}
       - name: Run Playwright smoke tests
         run: |
           E2E_BASE_URL=http://localhost:4173 npx playwright test --config=playwright.config.ts --project=chromium --reporter=list

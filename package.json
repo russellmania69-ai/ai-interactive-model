@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,6 +15,8 @@
     "e2e": "playwright test --config=playwright.config.ts",
     "e2e:ci": "npx playwright test --config=playwright.config.ts --reporter=list",
     "test": "vitest",
+    "smoke:prod": "node scripts/smoke/prod-smoke.js",
+    "release:prepare": "bash scripts/release/release.sh",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -75,6 +80,10 @@
     "uuid": "11.1.0",
     "vaul": "0.9.3",
     "zod": "3.23.8"
+  },
+  "optionalDependencies": {
+    "rate-limit-redis": "^2.0.0",
+    "@aws-sdk/client-s3": "^3.500.0"
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",

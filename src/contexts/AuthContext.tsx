@@ -5,6 +5,8 @@ import { supabase, supabaseEnabled } from '@/lib/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
+type SignInResponse = { data?: { user?: User; session?: Session } };
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -29,8 +31,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hasAuthSupport = !!supabaseEnabled;
 
     if (!hasAuthSupport) {
-      // Supabase not configured — skip auth initialization to allow the app to run in dev without keys.
+      // Supabase not configured — app is running with the in-repo mock.
+      // For E2E determinism, allow auto sign-in when the URL contains
+      // `?mock_signin=1`. This will call the mock's signInWithPassword and
+      // populate `user`/`session` so UI elements like "My Profile" appear.
       setLoading(false);
+
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mock_signin') === '1') {
+          (async () => {
+            try {
+              // seeded credentials used by the E2E scripts
+              const email = 'russellmania69@gmail.com';
+              const password = 'duxhe8-cEdruf-hejxym';
+              // call mock supabase sign-in
+              const res = await (supabase as unknown as SupabaseClient).auth.signInWithPassword({ email, password }) as unknown as SignInResponse;
+              if (res && res.data && res.data.user) {
+                const u = res.data.user as User;
+                if (isMounted) {
+                  setUser(u);
+                  setSession(res.data.session ?? null);
+                  setLoading(false);
+                  try { console.log('AUTO_MOCK_SIGNIN_OK', u?.email ?? 'unknown'); } catch (e) { /* ignore */ }
+                }
+              }
+            } catch (err) {
+              console.error('Auto mock signin failed:', err);
+            }
+          })();
+        }
+      } catch (e) {
+        // ignore URL parsing errors in constrained environments
+      }
+
       return () => {
         isMounted = false;
       };
@@ -102,7 +136,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({ email, password });
+    const res = await supabase.auth.signInWithPassword({ email, password });
+
+    // If the app is running without real Supabase (mocked), the auth
+    // subscription path above is skipped. In that case, update local state
+    // directly from the sign-in result so UI updates (My Profile etc.) work
+    // in seeded/mock E2E runs.
+    try {
+      // supabase mock returns { data: { user: ... } } shape when seeded
+      if (!supabaseEnabled) {
+        const resTyped = res as unknown as SignInResponse;
+        if (resTyped && resTyped.data && resTyped.data.user) {
+          const u = resTyped.data.user as User;
+          setUser(u);
+          setSession(resTyped.data.session ?? null);
+          setLoading(false);
+          try {
+            // E2E debug marker: log and write a temporary localStorage flag so tests can detect mock signin
+            // This is intentionally minimal and only runs when the supabase mock is active.
+            // Remove when not needed for E2E debugging.
+            console.log('MOCK_SIGNIN_OK', u?.email ?? 'unknown');
+            try { localStorage.setItem('mock_session', '1'); } catch (e) { /* ignore */ }
+          } catch (e) {
+            // ignore any errors from logging/storage
+          }
+        }
+      }
+    } catch (e) {
+      // swallow errors here to avoid breaking sign-in flow
+    }
+
+    return res;
   };
 
   const signOut = async () => {
