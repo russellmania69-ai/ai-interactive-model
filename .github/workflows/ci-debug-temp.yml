@@ -1,0 +1,40 @@
+name: CI Debug Artifacts (temporary)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests and capture log
+        run: |
+          CI=true npm test -- --run --coverage 2>&1 | tee vitest.log
+
+      - name: Upload vitest.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-log
+          path: vitest.log
+
+      - name: Upload coverage-final.json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-final
+          path: coverage/coverage-final.json
