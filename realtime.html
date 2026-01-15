@@ -119,6 +119,11 @@ function startRealtime(transcript){
   });
   es.addEventListener('done', () => { es.close(); });
   es.addEventListener('error', (ev)=>{ console.error('sse error', ev); es.close(); });
+  // metrics endpoint quick-link (optional)
+  const mbtn = document.createElement('button'); mbtn.textContent = 'Metrics'; mbtn.onclick = async ()=>{
+    try { const r = await fetch('/metrics'); const t = await r.text(); console.log(t); alert('Metrics logged to console'); } catch(e){ alert('metrics fetch failed'); }
+  };
+  document.getElementById('controls').appendChild(mbtn);
 }
 </script>
 </body>
