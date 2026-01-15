@@ -92,6 +92,31 @@ function startRealtime(transcript){
     // speak incremental chunk
     speakChunk(text);
   };
+  es.addEventListener('audio', (ev) => {
+    try {
+      const obj = JSON.parse(ev.data || '{}');
+      // prefer audio_url, otherwise base64
+      if (obj.audio_url) {
+        const a = document.createElement('audio');
+        a.controls = true; a.src = obj.audio_url; a.autoplay = true;
+        document.body.appendChild(a);
+      } else if (obj.audio_base64) {
+        // assume base64 PCM/MP3/etc — attempt to convert to blob
+        const b64 = obj.audio_base64.replace(/^data:audio\/[a-zA-Z0-9.+-]+;base64,/, '');
+        const byteChars = atob(b64);
+        const byteNumbers = new Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('audio');
+        a.controls = true; a.src = url; a.autoplay = true;
+        document.body.appendChild(a);
+      }
+    } catch (e) {
+      console.warn('audio event parse error', e);
+    }
+  });
   es.addEventListener('done', () => { es.close(); });
   es.addEventListener('error', (ev)=>{ console.error('sse error', ev); es.close(); });
 }
