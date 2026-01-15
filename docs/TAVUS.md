@@ -40,6 +40,19 @@ Caching & Rate limiting
   - `TAVUS_RATE_WINDOW_MS` (default 60000) — window in ms
   - `TAVUS_RATE_MAX` (default 6) — max requests per window
 
+Redis-backed rate limiting
+--------------------------
+
+The proxy can optionally use Redis for a distributed rate limiter. To enable it, set `REDIS_URL`
+and install the Redis store package:
+
+```bash
+npm i rate-limit-redis ioredis
+```
+
+When Redis is configured the proxy will use a Redis-backed store; otherwise it falls back to an
+in-memory rate limiter.
+
 Cache cleanup and admin purge
 ----------------------------
 

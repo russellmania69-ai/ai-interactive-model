@@ -1,6 +1,17 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import IORedis from 'ioredis';
+let RedisStore = null;
+try {
+  // optional dependency: rate-limit-redis
+  // npm i rate-limit-redis
+  // If not installed will fall back to in-memory limiter
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  RedisStore = require('rate-limit-redis');
+} catch (e) {
+  RedisStore = null;
+}
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -21,11 +32,30 @@ if (!TAVUS_KEY) {
 }
 
 // Simple per-IP rate limiter to protect Tavus API usage (configurable via env)
-const tavusLimiter = rateLimit({
-  windowMs: Number(process.env.TAVUS_RATE_WINDOW_MS || 60_000),
-  max: Number(process.env.TAVUS_RATE_MAX || 6),
-  message: { error: 'Rate limit exceeded' }
-});
+const windowMs = Number(process.env.TAVUS_RATE_WINDOW_MS || 60_000);
+const maxRequests = Number(process.env.TAVUS_RATE_MAX || 6);
+let tavusLimiter;
+const REDIS_URL = process.env.REDIS_URL || process.env.REDIS || process.env.REDIS_URI || '';
+if (REDIS_URL && RedisStore) {
+  try {
+    const redisClient = new IORedis(REDIS_URL);
+    const store = new RedisStore({ client: redisClient, expiry: Math.ceil(windowMs / 1000), prefix: 'tavus_rl:' });
+    tavusLimiter = rateLimit({
+      windowMs,
+      max: maxRequests,
+      message: { error: 'Rate limit exceeded' },
+      standardHeaders: true,
+      legacyHeaders: false,
+      store
+    });
+    console.log('Tavus rate limiter: using Redis store');
+  } catch (err) {
+    console.warn('Failed to initialize Redis rate limiter, falling back to memory limiter', err);
+    tavusLimiter = rateLimit({ windowMs, max: maxRequests, message: { error: 'Rate limit exceeded' } });
+  }
+} else {
+  tavusLimiter = rateLimit({ windowMs, max: maxRequests, message: { error: 'Rate limit exceeded' } });
+}
 
 // POST /api/tavus/generate
 // body: { avatarId: string, input: { text: string }, options?: object }
