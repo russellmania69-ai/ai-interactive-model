@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tavus Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 16px; }
+    label { display:block; margin-top:8px }
+  </style>
+</head>
+<body>
+  <h3>Tavus demo (proxy)</h3>
+  <p>Provide an <b>avatarId</b> and text to generate speech. This demo posts to <code>/api/tavus/generate</code>.</p>
+  <label>Avatar ID: <input id="avatar" /></label>
+  <label>Text: <textarea id="text" rows="4" cols="60">Hello there! This is a Tavus demo.</textarea></label>
+  <button id="go">Generate</button>
+  <div id="out" style="margin-top:12px"></div>
+
+<script>
+document.getElementById('go').addEventListener('click', async () => {
+  const avatarId = document.getElementById('avatar').value.trim();
+  const text = document.getElementById('text').value.trim();
+  const out = document.getElementById('out');
+  out.textContent = 'Calling...';
+  try {
+    const res = await fetch('/api/tavus/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatarId, input: { text } })
+    });
+    const j = await res.json();
+    if (!res.ok) {
+      out.textContent = 'Error: ' + JSON.stringify(j);
+      return;
+    }
+    out.textContent = 'Success — response trimmed below';
+    const pre = document.createElement('pre');
+    pre.style.maxHeight = '300px'; pre.style.overflow = 'auto';
+    pre.textContent = JSON.stringify(j, null, 2);
+    out.appendChild(pre);
+
+    // If the response contains an audio URL, play it.
+    const audioUrl = j?.data?.audio_url || j?.data?.result?.audio_url || j?.data?.audio;
+    if (audioUrl) {
+      const a = document.createElement('audio');
+      a.controls = true; a.src = audioUrl; a.autoplay = true;
+      out.appendChild(a);
+    }
+  } catch (e) {
+    out.textContent = 'Request failed: ' + e.message;
+  }
+});
+</script>
+</body>
+</html>
