@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Realtime AI Video + Voice</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 12px; }
+    #video { width: 480px; height: 360px; background:#000; }
+    #caption { margin-top: 12px; font-size:18px; background:#111;color:#fff;padding:8px;border-radius:6px; width:480px; }
+    .mouth { width:60px; height:10px; background: #222; margin-top:8px; border-radius:10px; transition: transform 0.08s ease; }
+  </style>
+</head>
+<body>
+  <h3>Realtime AI Video + Voice (demo)</h3>
+  <video id="video" autoplay muted playsinline></video>
+  <div class="mouth" id="mouth"></div>
+  <div id="controls">
+    <button id="start">Start Camera</button>
+    <button id="start-rec">Start Transcription</button>
+    <button id="stop-rec" disabled>Stop</button>
+  </div>
+  <div id="caption">Say something or press Start Transcription</div>
+
+<script>
+const video = document.getElementById('video');
+const caption = document.getElementById('caption');
+const mouth = document.getElementById('mouth');
+let stream;
+async function startCamera(){
+  stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  video.srcObject = stream;
+}
+document.getElementById('start').onclick = startCamera;
+
+let recognition;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous = true;
+
+  recognition.onresult = (evt) => {
+    let final = '';
+    let interim = '';
+    for (let i = evt.resultIndex; i < evt.results.length; ++i) {
+      const r = evt.results[i];
+      if (r.isFinal) final += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    caption.textContent = final || interim || 'Listening...';
+    const level = Math.min(1, (interim.length + final.length) / 50);
+    mouth.style.transform = `scaleY(${1 + level*1.2})`;
+    if (final) {
+      startRealtime(final);
+    }
+  };
+  recognition.onerror = (e)=> console.warn('recerr', e);
+  recognition.onend = ()=> { document.getElementById('stop-rec').disabled=true; document.getElementById('start-rec').disabled=false; caption.textContent='Stopped'; mouth.style.transform='scaleY(1)'; };
+}
+
+document.getElementById('start-rec').onclick = ()=>{
+  if (!recognition) return alert('Browser does not support Web Speech Recognition. Use Chrome.');
+  recognition.start();
+  document.getElementById('start-rec').disabled = true;
+  document.getElementById('stop-rec').disabled = false;
+  caption.textContent = 'Listening...';
+};
+document.getElementById('stop-rec').onclick = ()=>{ if (!recognition) return; recognition.stop(); };
+
+function speakChunk(text){
+  if ('speechSynthesis' in window){
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 1;
+    u.onstart = ()=> mouth.style.transform = 'scaleY(1.8)';
+    u.onend = ()=> mouth.style.transform = 'scaleY(1)';
+    speechSynthesis.speak(u);
+  }
+}
+
+function startRealtime(transcript){
+  caption.textContent = 'You: ' + transcript;
+  const url = '/api/realtime?prompt=' + encodeURIComponent(transcript);
+  const es = new EventSource(url);
+  let buffer = '';
+  es.onmessage = (e) => {
+    const text = (e.data || '').replace(/\\n/g, '\n');
+    buffer += text;
+    // show current
+    caption.textContent = buffer;
+    // speak incremental chunk
+    speakChunk(text);
+  };
+  es.addEventListener('done', () => { es.close(); });
+  es.addEventListener('error', (ev)=>{ console.error('sse error', ev); es.close(); });
+}
+</script>
+</body>
+</html>
